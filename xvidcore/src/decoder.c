@@ -4,7 +4,7 @@
  *  - Decoder Module -
  *
  *  Copyright(C) 2002      MinChen <chenm001@163.com>
- *               2002-2004 Peter Ross <pross@xvid.org>
+ *               2002-2003 Peter Ross <pross@xvid.org>
  *
  *  This program is free software ; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: decoder.c,v 1.58 2004-05-31 21:36:23 edgomez Exp $
+ * $Id: decoder.c,v 1.51.2.5 2004-06-04 11:54:41 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -303,7 +303,7 @@ decoder_mbintra(DECODER * dec,
 
 		start_timer();
 		predict_acdc(dec->mbs, x_pos, y_pos, dec->mb_width, i, &block[i * 64],
-					 iQuant, iDcScaler, predictors, bound, dec->bs_version);
+					 iQuant, iDcScaler, predictors, bound);
 		if (!acpred_flag) {
 			pMB->acpred_directions[i] = 0;
 		}
@@ -339,7 +339,7 @@ decoder_mbintra(DECODER * dec,
 		stop_coding_timer();
 
 		start_timer();
-		add_acdc(pMB, i, &block[i * 64], iDcScaler, predictors);
+		add_acdc(pMB, i, &block[i * 64], iDcScaler, predictors, dec->bs_version);
 		stop_prediction_timer();
 
 		start_timer();
@@ -815,13 +815,10 @@ decoder_pframe(DECODER * dec,
 		mb_height = (dec->height + 31) / 32;
 	}
 
-	if (!dec->is_edged[0]) {
-		start_timer();
-		image_setedges(&dec->refn[0], dec->edged_width, dec->edged_height,
-						dec->width, dec->height, dec->bs_version);
-		dec->is_edged[0] = 1;
-		stop_edges_timer();	
-	}
+	start_timer();
+	image_setedges(&dec->refn[0], dec->edged_width, dec->edged_height,
+					dec->width, dec->height, dec->bs_version);
+	stop_edges_timer();
 
 	if (gmc_warp) {
 		/* accuracy: 0==1/2, 1=1/4, 2=1/8, 3=1/16 */
@@ -1220,21 +1217,12 @@ decoder_bframe(DECODER * dec,
 	const VECTOR zeromv = {0,0};
 	int i;
 
-	if (!dec->is_edged[0]) {
-		start_timer();
-		image_setedges(&dec->refn[0], dec->edged_width, dec->edged_height,
-						dec->width, dec->height, dec->bs_version);
-		dec->is_edged[0] = 1;
-		stop_edges_timer();
-	}
-
-	if (!dec->is_edged[1]) {
-		start_timer();
-		image_setedges(&dec->refn[1], dec->edged_width, dec->edged_height,
-						dec->width, dec->height, dec->bs_version);
-		dec->is_edged[1] = 1;
-		stop_edges_timer();
-	}
+	start_timer();
+	image_setedges(&dec->refn[0], dec->edged_width, dec->edged_height,
+					dec->width, dec->height, dec->bs_version);
+	image_setedges(&dec->refn[1], dec->edged_width, dec->edged_height,
+					dec->width, dec->height, dec->bs_version);
+	stop_edges_timer();
 
 	for (y = 0; y < dec->mb_height; y++) {
 		/* Initialize Pred Motion Vector */
@@ -1373,19 +1361,16 @@ void decoder_output(DECODER * dec, IMAGE * img, MACROBLOCK * mbs,
 					xvid_dec_frame_t * frame, xvid_dec_stats_t * stats,
 					int coding_type, int quant)
 {
-	const int brightness = XVID_VERSION_MINOR(frame->version) >= 1 ? frame->brightness : 0;
-
 	if (dec->cartoon_mode)
 		frame->general &= ~XVID_FILMEFFECT;
 
-	if ((frame->general & (XVID_DEBLOCKY|XVID_DEBLOCKUV|XVID_FILMEFFECT) || brightness!=0) 
-		&& mbs != NULL)	/* post process */
+	if (frame->general & (XVID_DEBLOCKY|XVID_DEBLOCKUV|XVID_FILMEFFECT) && mbs != NULL)	/* post process */
 	{
 		/* note: image is stored to tmp */
 		image_copy(&dec->tmp, img, dec->edged_width, dec->height);
 		image_postproc(&dec->postproc, &dec->tmp, dec->edged_width, 
 					   mbs, dec->mb_width, dec->mb_height, dec->mb_width,
-					   frame->general, brightness, dec->frames, (coding_type == B_VOP));
+					   frame->general, dec->frames, (coding_type == B_VOP));
 		img = &dec->tmp;
 	}
 
@@ -1559,9 +1544,7 @@ repeat:
 		}
 
 		image_swap(&dec->refn[0], &dec->refn[1]);
-		dec->is_edged[1] = dec->is_edged[0];
 		image_swap(&dec->cur, &dec->refn[0]);
-		dec->is_edged[0] = 0;
 		SWAP(MACROBLOCK *, dec->mbs, dec->last_mbs);
 		dec->last_reduced_resolution = reduced_resolution;
 		dec->last_coding_type = coding_type;

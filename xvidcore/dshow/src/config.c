@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: config.c,v 1.4 2004-04-18 07:55:11 syskin Exp $
+ * $Id: config.c,v 1.2 2004-03-22 22:36:23 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -46,8 +46,7 @@ void LoadRegistryInfo()
 	REG_GET_N("Brightness", g_config.nBrightness, 25)
 	REG_GET_N("Deblock_Y",  g_config.nDeblock_Y, 0)
 	REG_GET_N("Deblock_UV", g_config.nDeblock_UV, 0)
-	REG_GET_N("Dering_Y",  g_config.nDering_Y, 0)
-	REG_GET_N("Dering_UV",  g_config.nDering_UV, 0)
+	REG_GET_N("Dering",  g_config.nDering, 0)
 	REG_GET_N("FilmEffect", g_config.nFilmEffect, 0)
 	REG_GET_N("ForceColorspace", g_config.nForceColorspace, 0)
 	REG_GET_N("FlipVideo",  g_config.nFlipVideo, 0)
@@ -80,8 +79,7 @@ void SaveRegistryInfo()
 	REG_SET_N("Brightness", g_config.nBrightness);
 	REG_SET_N("Deblock_Y",  g_config.nDeblock_Y);
 	REG_SET_N("Deblock_UV", g_config.nDeblock_UV);
-	REG_SET_N("Dering_Y", g_config.nDering_Y);
-	REG_SET_N("Dering_UV", g_config.nDering_UV);
+	REG_SET_N("Dering", g_config.nDering);
 	REG_SET_N("FilmEffect", g_config.nFilmEffect);
 	REG_SET_N("ForceColorspace", g_config.nForceColorspace);
 	REG_SET_N("FlipVideo", g_config.nFlipVideo);
@@ -125,15 +123,13 @@ BOOL CALLBACK adv_proc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		SendMessage(GetDlgItem(hwnd, IDC_COLORSPACE), CB_SETCURSEL, g_config.nForceColorspace, 0); 
 
 		hBrightness = GetDlgItem(hwnd, IDC_BRIGHTNESS);
-		SendMessage(hBrightness, TBM_SETRANGE, (WPARAM)TRUE, (LPARAM)MAKELONG(-96, 96));
-		SendMessage(hBrightness, TBM_SETTICFREQ, (WPARAM)16, (LPARAM)0);
-		SendMessage(hBrightness, TBM_SETPOS, (WPARAM)TRUE, (LPARAM) g_config.nBrightness);
+		SendMessage(hBrightness, TBM_SETRANGE, (WPARAM) (BOOL) TRUE, (LPARAM) MAKELONG(0, 50));
+		SendMessage(hBrightness, TBM_SETPOS, (WPARAM) (BOOL) TRUE, (LPARAM) g_config.nBrightness);
 
 		// Load Buttons
 		SendMessage(GetDlgItem(hwnd, IDC_DEBLOCK_Y), BM_SETCHECK, g_config.nDeblock_Y, 0);
 		SendMessage(GetDlgItem(hwnd, IDC_DEBLOCK_UV), BM_SETCHECK, g_config.nDeblock_UV, 0);
-		SendMessage(GetDlgItem(hwnd, IDC_DERINGY), BM_SETCHECK, g_config.nDering_Y, 0);
-		SendMessage(GetDlgItem(hwnd, IDC_DERINGUV), BM_SETCHECK, g_config.nDering_UV, 0);
+		SendMessage(GetDlgItem(hwnd, IDC_DERING), BM_SETCHECK, g_config.nDering, 0);
 		SendMessage(GetDlgItem(hwnd, IDC_FILMEFFECT), BM_SETCHECK, g_config.nFilmEffect, 0);
 		SendMessage(GetDlgItem(hwnd, IDC_FLIPVIDEO), BM_SETCHECK, g_config.nFlipVideo, 0);
 
@@ -142,9 +138,6 @@ BOOL CALLBACK adv_proc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		SendMessage(GetDlgItem(hwnd, IDC_DX50), BM_SETCHECK, g_config.supported_4cc & SUPPORT_DX50, 0);
 		SendMessage(GetDlgItem(hwnd, IDC_MP4V), BM_SETCHECK, g_config.supported_4cc & SUPPORT_MP4V, 0);
 		SendMessage(GetDlgItem(hwnd, IDC_COMPAT), BM_SETCHECK, g_config.videoinfo_compat, 0);
-
-		EnableWindow(GetDlgItem(hwnd,IDC_DERINGY),g_config.nDeblock_Y);
-		EnableWindow(GetDlgItem(hwnd,IDC_DERINGUV),g_config.nDeblock_UV);
 
 		// Set Date & Time of Compilation
 		DPRINTF("(%s %s)", __DATE__, __TIME__);
@@ -155,13 +148,13 @@ BOOL CALLBACK adv_proc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		{
 		case IDC_RESET:
 			ZeroMemory(&g_config, sizeof(CONFIG));
+			g_config.nBrightness = 25;
 			hBrightness = GetDlgItem(hwnd, IDC_BRIGHTNESS);
-			SendMessage(hBrightness, TBM_SETPOS, (WPARAM) TRUE, (LPARAM) g_config.nBrightness);
+			SendMessage(hBrightness, TBM_SETPOS, (WPARAM) (BOOL) TRUE, (LPARAM) g_config.nBrightness);
 			// Load Buttons
 			SendMessage(GetDlgItem(hwnd, IDC_DEBLOCK_Y), BM_SETCHECK, g_config.nDeblock_Y, 0);
 			SendMessage(GetDlgItem(hwnd, IDC_DEBLOCK_UV), BM_SETCHECK, g_config.nDeblock_UV, 0);
-			SendMessage(GetDlgItem(hwnd, IDC_DERINGY), BM_SETCHECK, g_config.nDering_Y, 0);
-			SendMessage(GetDlgItem(hwnd, IDC_DERINGUV), BM_SETCHECK, g_config.nDering_UV, 0);
+			SendMessage(GetDlgItem(hwnd, IDC_DERING), BM_SETCHECK, g_config.nDering, 0);
 			SendMessage(GetDlgItem(hwnd, IDC_FILMEFFECT), BM_SETCHECK, g_config.nFilmEffect, 0);
 			SendMessage(GetDlgItem(hwnd, IDC_FLIPVIDEO), BM_SETCHECK, g_config.nFlipVideo, 0);
 			g_config.nForceColorspace = 0;
@@ -174,11 +167,8 @@ BOOL CALLBACK adv_proc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		case IDC_DEBLOCK_UV:
 			g_config.nDeblock_UV = !g_config.nDeblock_UV;
 			break;
-		case IDC_DERINGY:
-			g_config.nDering_Y = !g_config.nDering_Y;
-			break;
-		case IDC_DERINGUV:
-			g_config.nDering_UV = !g_config.nDering_UV;
+		case IDC_DERING:
+			g_config.nDering = !g_config.nDering;
 			break;
 		case IDC_FILMEFFECT:
 			g_config.nFilmEffect = !g_config.nFilmEffect;
@@ -201,11 +191,7 @@ BOOL CALLBACK adv_proc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		default :
 			return FALSE;
 		}
-		EnableWindow(GetDlgItem(hwnd,IDC_DERINGY),g_config.nDeblock_Y);
-		EnableWindow(GetDlgItem(hwnd,IDC_DERINGUV),g_config.nDeblock_UV);
 		SaveRegistryInfo();
-		
-
 		break;
 	case WM_NOTIFY:
 		hBrightness = GetDlgItem(hwnd, IDC_BRIGHTNESS);

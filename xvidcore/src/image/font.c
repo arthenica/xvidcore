@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: font.c,v 1.6 2004-05-31 21:36:23 edgomez Exp $
+ * $Id: font.c,v 1.5.2.1 2004-05-28 21:40:11 edgomez Exp $
  *
  ****************************************************************************/
 

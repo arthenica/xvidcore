@@ -9,7 +9,7 @@
 # Requires GNU Make because of shell expansion performed at a bad time with
 # other make programs (even using := variable assignments)
 #
-# $Id: Makefile,v 1.3 2004-04-02 21:29:21 edgomez Exp $
+# $Id: Makefile,v 1.2.2.1 2004-03-28 12:20:14 edgomez Exp $
 ##############################################################################
 
 include sources.inc

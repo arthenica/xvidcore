@@ -21,7 +21,7 @@
 ; *  along with this program ; if not, write to the Free Software
 ; *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 ; *
-; * $Id: mem_transfer_mmx.asm,v 1.12 2004-04-13 20:06:53 edgomez Exp $
+; * $Id: mem_transfer_mmx.asm,v 1.10 2004-03-22 22:36:24 edgomez Exp $
 ; *
 ; ***************************************************************************/
 

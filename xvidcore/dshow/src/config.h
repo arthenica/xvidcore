@@ -32,8 +32,7 @@ typedef struct
 	int nBrightness;
 	int nDeblock_Y;
 	int nDeblock_UV;
-	int nDering_Y;
-	int nDering_UV;
+	int nDering;
 	int nFilmEffect;
 	int nFlipVideo;
 	int nForceColorspace;
