@@ -33,7 +33,7 @@
 ;  24.11.2001 initial version  (Isibaar)
 ;  23.07.2002 thread safe (edgomez)
 ; 
-;  $Id: yuv_to_yv12_mmx.asm,v 1.8 2003-02-15 15:22:18 edgomez Exp $ 
+;  $Id: yuv_to_yv12_mmx.asm,v 1.5 2002-07-23 15:38:18 edgomez Exp $ 
 ;
 ;------------------------------------------------------------------------------ 
 

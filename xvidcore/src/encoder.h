@@ -36,7 +36,7 @@
  *               support for EXTENDED API
  *  - 22.08.2001 fixed bug in iDQtab
  *
- *  $Id: encoder.h,v 1.27 2003-02-15 15:22:17 edgomez Exp $
+ *  $Id: encoder.h,v 1.18.2.4 2002-11-02 15:52:30 chl Exp $
  *
  ****************************************************************************/
 
@@ -46,6 +46,7 @@
 #include "xvid.h"
 #include "portab.h"
 #include "global.h"
+#include "image/image.h"
 #include "utils/ratecontrol.h"
 
 /*****************************************************************************
@@ -92,13 +93,10 @@ typedef struct
 	uint32_t fincr;
 	uint32_t fbase;
 
-	/* constants */
-	int global;
-	int bquant_ratio;
-	int bquant_offset;
-	int frame_drop_ratio;
+#ifdef _SMP
+	int num_threads;
+#endif
 
-	int iMaxKeyInterval;
 	int max_bframes;
 
 	/* rounding type; alternate 0-1 after each interframe */
@@ -111,26 +109,12 @@ typedef struct
 	uint32_t m_rounding_type;
 	uint32_t m_fcode;
 	uint32_t m_quarterpel;
-	int m_reduced_resolution;	/* reduced_resolution_enable */
 
 	HINTINFO *hint;
 
 	int64_t m_stamp;
 }
 MBParam;
-
-
-typedef struct
-{
-	int iTextBits;
-	int iMvSum;
-	int iMvCount;
-	int kblks;
-	int mblks;
-	int ublks;
-	int gblks;
-}
-Statistics;
 
 
 typedef struct
@@ -152,13 +136,22 @@ typedef struct
 	IMAGE image;
 
 	MACROBLOCK *mbs;
-
-	WARPPOINTS warp;		// as in bitstream
-	GMC_DATA gmc_data;		// common data for all MBs
-		
-	Statistics sStat;
+	VECTOR GMC_MV;
 }
 FRAMEINFO;
+
+typedef struct
+{
+	int iTextBits;
+	float fMvPrevSigma;
+	int iMvSum;
+	int iMvCount;
+	int kblks;
+	int mblks;
+	int ublks;
+}
+Statistics;
+
 
 
 typedef struct
@@ -166,6 +159,7 @@ typedef struct
 	MBParam mbParam;
 
 	int iFrameNum;
+	int iMaxKeyInterval;
 	int bitrate;
 
 	// images
@@ -173,14 +167,19 @@ typedef struct
 	FRAMEINFO *current;
 	FRAMEINFO *reference;
 
+#ifdef _DEBUG_PSNR
 	IMAGE sOriginal;
+#endif
 	IMAGE vInterH;
 	IMAGE vInterV;
 	IMAGE vInterVf;
 	IMAGE vInterHV;
 	IMAGE vInterHVf;
 
-	IMAGE vGMC;
+	/* constants */
+	int global;
+	int bquant_ratio;
+	int frame_drop_ratio;
 
 	/* image queue */
 	int queue_head;
@@ -201,9 +200,8 @@ typedef struct
 
 	int m_framenum; /* debug frame num counter; unlike iFrameNum, does not reset at ivop */
 
+	Statistics sStat;
 	RateControl rate_control;
-
-	float fMvPrevSigma;
 }
 Encoder;
 

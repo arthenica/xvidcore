@@ -74,7 +74,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <math.h>		// needed for log10
 #include <sys/time.h>		// only needed for gettimeofday
 
@@ -82,13 +81,14 @@
 
 int motion_presets[7] = {
 	0,                                                              // Q 0
-	0,                                                // Q 1
-	0,						// Q 2
-	PMV_HALFPELREFINE16,				// Q 3
-	PMV_HALFPELREFINE16,				// Q 4
-	PMV_HALFPELREFINE16 | PMV_HALFPELREFINE8,	 	// Q 5 	
-	PMV_HALFPELREFINE16 | PMV_EXTSEARCH16 	// Q 6
-			| PMV_USESQUARES8 | PMV_USESQUARES16 | PMV_HALFPELREFINE8
+	PMV_EARLYSTOP16,                                                // Q 1
+	PMV_EARLYSTOP16,						// Q 2
+	PMV_EARLYSTOP16 | PMV_HALFPELREFINE16,				// Q 3
+	PMV_EARLYSTOP16 | PMV_HALFPELREFINE16,				// Q 4
+	PMV_EARLYSTOP16 | PMV_HALFPELREFINE16 | PMV_EARLYSTOP8	 	// Q 5
+ 			| PMV_HALFPELREFINE8, 	
+	PMV_EARLYSTOP16 | PMV_HALFPELREFINE16 | PMV_EXTSEARCH16 	// Q 6
+			| PMV_USESQUARES8 | PMV_USESQUARES16 | PMV_EARLYSTOP8 | PMV_HALFPELREFINE8
 	};
 
 int general_presets[7] = {
@@ -324,7 +324,6 @@ int enc_init(int use_assembler)
 	xparam.global = XVID_GLOBAL_DX50BVOP;//XVID_GLOBAL_DEBUG; //XVID_GLOBAL_PACKED|XVID_GLOBAL_DX50BVOP;//|XVID_GLOBAL_DEBUG;
 	xparam.max_bframes = ARG_MAX_BFRAMES;
 	xparam.bquant_ratio = ARG_BQUANT_RATIO;
-	xparam.bquant_offset= 0;
 
 	xparam.frame_drop_ratio = 0;
 
@@ -351,8 +350,7 @@ int  enc_main(unsigned char* image, unsigned char* bitstream, int *streamlength,
 	xframe.length = -1; 	// this is written by the routine
 
 	xframe.image = image;
-	xframe.stride = XDIM;
-        xframe.colorspace = XVID_CSP_I420;	// defined in <xvid.h>
+        xframe.colorspace = XVID_CSP_YV12;	// defined in <xvid.h>
 
 	xframe.intra = -1; // let the codec decide between I-frame (1) and P-frame (0)
 
@@ -425,7 +423,7 @@ int dec_main(unsigned char *m4v_buffer, unsigned char *out_buffer, int *m4v_size
         xframe.length = 1234; // *m4v_size;
         xframe.image = out_buffer;
         xframe.stride = XDIM;
-        xframe.colorspace = XVID_CSP_I420;             // XVID_CSP_USER is fastest (no memcopy involved)
+        xframe.colorspace = XVID_CSP_YV12;             // XVID_CSP_USER is fastest (no memcopy involved)
 
         xerr = xvid_decore(dec_handle, XVID_DEC_DECODE, &xframe, NULL);
 		

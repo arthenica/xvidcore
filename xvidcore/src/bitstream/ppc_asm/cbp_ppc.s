@@ -15,10 +15,10 @@
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
 #
-#    $Id: cbp_ppc.s,v 1.11 2003-02-15 15:22:18 edgomez Exp $
+#    $Id: cbp_ppc.s,v 1.9 2002-03-28 12:29:58 canard Exp $
 #    $Source: /home/xvid/cvs_copy/cvs-server-root/xvid/xvidcore/src/bitstream/ppc_asm/cbp_ppc.s,v $
-#    $Date: 2003-02-15 15:22:18 $
-#    $Author: edgomez $
+#    $Date: 2002-03-28 12:29:58 $
+#    $Author: canard $
 #
 #    This is my first PPC ASM attempt. So I might do nasty things.
 #    Please send any comments to <guillaume@morinfr.org>

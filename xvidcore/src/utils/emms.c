@@ -33,7 +33,7 @@
  *
  *  - Mon Jun 17 00:10:09 2002 Added legal header
  *
- *  $Id: emms.c,v 1.8 2003-02-15 15:22:19 edgomez Exp $
+ *  $Id: emms.c,v 1.3 2002-06-16 22:20:36 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -60,4 +60,13 @@ emmsFuncPtr emms;
 void
 emms_c()
 {
+}
+
+/* The real mmx emms wrapper */
+void
+emms_mmx()
+{
+	/* the EMMS macro is defined according to the compiler in portab.h */
+	EMMS();
+
 }

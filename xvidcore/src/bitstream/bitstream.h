@@ -59,8 +59,6 @@
 
 // comment any #defs we dont use
 
-/* start codes */
-
 #define VIDOBJ_START_CODE		0x00000100	/* ..0x0000011f  */
 #define VIDOBJLAY_START_CODE	0x00000120	/* ..0x0000012f */
 #define VISOBJSEQ_START_CODE	0x000001b0
@@ -69,8 +67,8 @@
 #define GRPOFVOP_START_CODE		0x000001b3
 //#define VIDSESERR_ERROR_CODE  0x000001b4
 #define VISOBJ_START_CODE		0x000001b5
-#define VOP_START_CODE			0x000001b6
-//#define STUFFING_START_CODE	0x000001c3
+//#define SLICE_START_CODE      0x000001b7
+//#define EXT_START_CODE        0x000001b8
 
 
 #define VISOBJ_TYPE_VIDEO				1
@@ -84,15 +82,6 @@
 //#define VIDOBJLAY_TYPE_SIMPLE_SCALABLE    2
 #define VIDOBJLAY_TYPE_CORE				3
 #define VIDOBJLAY_TYPE_MAIN				4
-//#define VIDOBJLAY_TYPE_NBIT				5
-//#define VIDOBJLAY_TYPE_ANIM_TEXT			6
-//#define VIDOBJLAY_TYPE_ANIM_MESH			7
-//#define VIDOBJLAY_TYPE_SIMPLE_FACE		8
-//#define VIDOBJLAY_TYPE_STILL_SCALABLE		9
-#define VIDOBJLAY_TYPE_ART_SIMPLE		10
-//#define VIDOBJLAY_TYPE_CORE_SCALABLE		11
-#define VIDOBJLAY_TYPE_ACE				12
-//#define VIDOBJLAY_TYPE_SIMPLE_FBA			13
 
 
 //#define VIDOBJLAY_AR_SQUARE           1
@@ -108,12 +97,9 @@
 #define VIDOBJLAY_SHAPE_BINARY_ONLY		2
 #define VIDOBJLAY_SHAPE_GRAYSCALE		3
 
-
-#define SPRITE_NONE		0
-#define SPRITE_STATIC	1
-#define SPRITE_GMC		2
-
-
+#define VO_START_CODE	0x8
+#define VOL_START_CODE	0x12
+#define VOP_START_CODE	0x1b6
 
 #define READ_MARKER()	BitstreamSkip(bs, 1)
 #define WRITE_MARKER()	BitstreamPutBit(bs, 1)
@@ -131,25 +117,18 @@
 #define RESYNC_MARKER 1
 
 
-int read_video_packet_header(Bitstream *bs, 
-						DECODER * dec, 
-						const int addbits, 
-						int * quant, 
-						int * fcode_forward,
-						int  * fcode_backward,
-						int * intra_dc_threshold);
+int
+read_video_packet_header(Bitstream *bs, const int addbits, int * quant);
 
 
 // header stuff
 int BitstreamReadHeaders(Bitstream * bs,
 						 DECODER * dec,
 						 uint32_t * rounding,
-						 uint32_t * reduced_resolution,
 						 uint32_t * quant,
 						 uint32_t * fcode_forward,
 						 uint32_t * fcode_backward,
-						 uint32_t * intra_dc_threshold,
-						 WARPPOINTS * gmc_warp);
+						 uint32_t * intra_dc_threshold);
 
 
 void BitstreamWriteVolHeader(Bitstream * const bs,

@@ -1,42 +1,97 @@
-+----------------------------------------------------------------------------+
-|                         ToDo List for Stable Tree                          |
-|                                                                            |
-+----------------------------------------------------------------------------+
-$Id: todo.txt,v 1.10 2002-11-26 23:44:09 edgomez Exp $
+todo
 
 
+*** build environment ***
 
-This ToDo list is for the first official release, once it is completed we
-will test the source tree on all supported platforms and fix last bugs.
+- portable makefile [DONE]
 
-
-++ Remove alpha code from stable tree
------------------------------------------------------------------------------
-
-* Remove all BFrames stuff from encoder - [DONE]
-* Remove all BFrames stuff from decoder - [DONE]
-  + Kept in stable tree.
-  + Segfault when used by mplayer, works fine otherwise :\
-* Remove all SMP stuff - [DONE]
-* Remove all field-ME functions [TODO]
+- QuickTime frontend
+- Java frontend
 
 
-++ Fixes
------------------------------------------------------------------------------
-* Add all legal headers (same headers all over the sources) - [DONE]
-* Sort out who has main copyrigths on files - [DONE]
-* Check core reentrancy - [IN PROGRESS]
-  + Problems detected in custom matrices, get_mv code, and function pointers.
-* Check the small mem problems reported by valgrind [DONE]
-  + None detected in stable tree :-)
-  + Purify detects lot of small unitialized reads (probably in bitstream functions)
-* Rewrite portab.h in a better way [DONE]
-  + Needs to be tested (and probably fixed) on all platforms/compilers
-* Ansi C compliancy [DONE]
+*** api ***
+- decore/encore2 wrappers; [DONE]
+- xvid_init() [DONE]
+	handle cpu detection, yuv/dct lookup table init	[DONT]
+	return api version number [DONE]
+	return core build number [HALTED; how?]
+
+*** common ***
+
+- mpeg-4 quantizer (quant4) testing [DONE]
+- consder moving a modified mbprediction/mbdeprediction here [DONE]
+- add [-2048,2048] to mmx dequant [DONE]
+- mmx quant4 [DONE]
+- sse2 [DONE]
+
+- sse2 quant4
+- mlib
+	
+
+*** image ***
+
+- sort out in/out & conversion func naming issues [DONE]
+- rgb16. [DONE]
 
 
-++ Other
------------------------------------------------------------------------------
-* Add automatic ChangeLog Generator - [DONE]
-  + Thanks to rockbox' script http://rockbox.haxx.se/
-* Find a co maintainer - [NO]
+- input flipping support
+output flipping support is not 'perfect'.
+using negative height is bad, best to have seperate vflip parameter
+
+- rgb24/32_mmx cause yellow dots to appear on left hand size
+(only visibile with high contrast colors)
+
+- investigate difference between basic-yuv and iso-yuv
+
+
+*** decoder ***
+
+- quant=1 encoder material appears "soft" [FIXED]
+- block based interpolation [DONE]
+
+- add basic mpeg4 stuff:
+	- custom mpeg quant matrixes [DONE]
+	- intra_dc_vlc_threshold [DONE]
+	- quarterpel  [in progress]
+	- resync?
+
+- msmpeg-4 support [IN PROGRESS]
+- post processing [IN PROGRESS]
+- b-vops [IN PROGRESS]
+
+- proper handling of time codes and fatal/non-fatal errors
+
+
+*** encoder ***
+
+- purple mb block (rare) [FIXED]
+- coeff range checks need to be verified against mpeg-4 spec [DONE]
+	- dequants now clamp to [-2048,2047]. [DONE]
+	- fdct_mmx clamps to [-2048,2047], it doesnt have to (but prevents overflows in mmx quantization)
+	- quants _should_ clamp to [-127,127], but this introduces errors at low quant levels so we ignore it
+	- idct _should_ clamp [-256,255], but its really unnessary overhead.
+- pmvfast bug fixing [DONE]
+- 'smearing bug' when motion occurs in straight vertical direction (
+http://www.videocoding.de/forum/viewtopic.php?topic=71&forum=2&6 )
+coefficient thresholding problems? [FIXED/REMOVED]
+- better luminance masking [DONE]
+
+
+- quater pixel motion search [IN PROGRESS]
+- bidirectional coding [IN PROGRESS]
+- virtualdub support [IN PROGRESS]
+
+- global motion compensation
+- redo coefficient thresholding like described in H26L
+- further improve adaptive quantisation, maybe implement JND maps
+- use N_VOP when a interframe is entirely composed of ublks & frame dropping. eg. simple ublk threshold
+
+
+*** gpl conversion ***
+
+mbdecoding.c [REPLACED]
+encoder.c	[REPLACED]
+mbmotionestcomp.c	[REPLACED]
+mbcoding [REPLACED]
+putvlc.c [REPLACED]
+ratecontol.c [REPLACED]

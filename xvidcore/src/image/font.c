@@ -36,8 +36,6 @@
   *                                                                            *
   ******************************************************************************/
 
-#include <stdio.h>
-#include <stdarg.h>
 
 #include "image.h"
 #include "font.h"
@@ -481,9 +479,9 @@ static const char ascii91[6][FONT_WIDTH*FONT_HEIGHT] = {
 		0,0,1,0,
 		0,0,1,0,
 		0,0,1,0,
-		0,0,1,0,
-		0,1,1,0 },
+		0,1,1,0,
 
+		0,0,1,0 },
 	{	0,1,0,1,		// ^
 		0,0,0,0,
 		0,0,0,0,
@@ -534,12 +532,12 @@ void image_printf(IMAGE * img, int edged_width, int height,
 {
 	va_list args;
 	char buf[FONT_BUF_SZ];
-	int i;
+	size_t i;
 
 	va_start(args, fmt);
 	vsprintf(buf, fmt, args);
 
-	for (i = 0; i < buf[i]; i++) {
+	for (i = 0; i < strlen(buf); i++) {
 		const char * font;
 
 		if (buf[i] >= '!' && buf[i] <= '@')

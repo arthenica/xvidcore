@@ -31,7 +31,6 @@
 
 
 #include "../portab.h"
-#include "../global.h"
 #include "interpolate8x8.h"
 
 // function pointers
@@ -54,12 +53,12 @@ INTERPOLATE_LOWPASS_HV_PTR interpolate16x16_lowpass_hv;
 INTERPOLATE8X8_6TAP_LOWPASS_PTR interpolate8x8_6tap_lowpass_h;
 INTERPOLATE8X8_6TAP_LOWPASS_PTR interpolate8x8_6tap_lowpass_v;
 
-void interpolate8x8_avg2_c(uint8_t *dst, const uint8_t *src1, const uint8_t *src2, const uint32_t stride, const uint32_t rounding, const uint32_t height)
+void interpolate8x8_avg2_c(uint8_t *dst, const uint8_t *src1, const uint8_t *src2, const uint32_t stride, const uint32_t rounding)
 {
-    uint32_t i;
+    int32_t i;
 	const int32_t round = 1 - rounding;
 
-    for(i = 0; i < height; i++)
+    for(i = 0; i < 9; i++)
     {
         dst[0] = (src1[0] + src2[0] + round) >> 1;
         dst[1] = (src1[1] + src2[1] + round) >> 1;
@@ -108,32 +107,19 @@ interpolate8x8_halfpel_h_c(uint8_t * const dst,
 						   const uint32_t stride,
 						   const uint32_t rounding)
 {
-	intptr_t j;
-	
-	if (rounding)
-		for (j = 7*stride; j >= 0; j-=stride)
-		{
-				dst[j + 0] = (uint8_t)((src[j + 0] + src[j + 1] )>>1);
-				dst[j + 1] = (uint8_t)((src[j + 1] + src[j + 2] )>>1);
-				dst[j + 2] = (uint8_t)((src[j + 2] + src[j + 3] )>>1);
-				dst[j + 3] = (uint8_t)((src[j + 3] + src[j + 4] )>>1);
-				dst[j + 4] = (uint8_t)((src[j + 4] + src[j + 5] )>>1);
-				dst[j + 5] = (uint8_t)((src[j + 5] + src[j + 6] )>>1);
-				dst[j + 6] = (uint8_t)((src[j + 6] + src[j + 7] )>>1);
-				dst[j + 7] = (uint8_t)((src[j + 7] + src[j + 8] )>>1);
+	uint32_t i, j;
+
+	for (j = 0; j < 8; j++) {
+		for (i = 0; i < 8; i++) {
+
+			int16_t tot =
+				(int32_t) src[j * stride + i] + (int32_t) src[j * stride + i +
+															  1];
+
+			tot = (int32_t) ((tot + 1 - rounding) >> 1);
+			dst[j * stride + i] = (uint8_t) tot;
 		}
-	else
-		for (j = 0; j < 8*stride; j+=stride)		/* forward or backwards? Who knows ... */
-		{
-				dst[j + 0] = (uint8_t)((src[j + 0] + src[j + 1] + 1)>>1);
-				dst[j + 1] = (uint8_t)((src[j + 1] + src[j + 2] + 1)>>1);
-				dst[j + 2] = (uint8_t)((src[j + 2] + src[j + 3] + 1)>>1);
-				dst[j + 3] = (uint8_t)((src[j + 3] + src[j + 4] + 1)>>1);
-				dst[j + 4] = (uint8_t)((src[j + 4] + src[j + 5] + 1)>>1);
-				dst[j + 5] = (uint8_t)((src[j + 5] + src[j + 6] + 1)>>1);
-				dst[j + 6] = (uint8_t)((src[j + 6] + src[j + 7] + 1)>>1);
-				dst[j + 7] = (uint8_t)((src[j + 7] + src[j + 8] + 1)>>1);
-		}
+	}
 }
 
 
@@ -144,33 +130,16 @@ interpolate8x8_halfpel_v_c(uint8_t * const dst,
 						   const uint32_t stride,
 						   const uint32_t rounding)
 {
-	intptr_t j;
-//	const uint8_t * const src2 = src+stride;		/* using a second pointer is _not_ faster here */
+	uint32_t i, j;
 
-	if (rounding)
-		for (j = 0; j < 8*stride; j+=stride)		/* forward is better. Some automatic prefetch perhaps. */
-		{
-				dst[j + 0] = (uint8_t)((src[j + 0] + src[j + stride + 0] )>>1);
-				dst[j + 1] = (uint8_t)((src[j + 1] + src[j + stride + 1] )>>1);
-				dst[j + 2] = (uint8_t)((src[j + 2] + src[j + stride + 2] )>>1);
-				dst[j + 3] = (uint8_t)((src[j + 3] + src[j + stride + 3] )>>1);
-				dst[j + 4] = (uint8_t)((src[j + 4] + src[j + stride + 4] )>>1);
-				dst[j + 5] = (uint8_t)((src[j + 5] + src[j + stride + 5] )>>1);
-				dst[j + 6] = (uint8_t)((src[j + 6] + src[j + stride + 6] )>>1);
-				dst[j + 7] = (uint8_t)((src[j + 7] + src[j + stride + 7] )>>1);
+	for (j = 0; j < 8; j++) {
+		for (i = 0; i < 8; i++) {
+			int16_t tot = src[j * stride + i] + src[j * stride + i + stride];
+
+			tot = ((tot + 1 - rounding) >> 1);
+			dst[j * stride + i] = (uint8_t) tot;
 		}
-	else
-		for (j = 0; j < 8*stride; j+=stride)
-		{
-				dst[j + 0] = (uint8_t)((src[j + 0] + src[j + stride + 0] + 1)>>1);
-				dst[j + 1] = (uint8_t)((src[j + 1] + src[j + stride + 1] + 1)>>1);
-				dst[j + 2] = (uint8_t)((src[j + 2] + src[j + stride + 2] + 1)>>1);
-				dst[j + 3] = (uint8_t)((src[j + 3] + src[j + stride + 3] + 1)>>1);
-				dst[j + 4] = (uint8_t)((src[j + 4] + src[j + stride + 4] + 1)>>1);
-				dst[j + 5] = (uint8_t)((src[j + 5] + src[j + stride + 5] + 1)>>1);
-				dst[j + 6] = (uint8_t)((src[j + 6] + src[j + stride + 6] + 1)>>1);
-				dst[j + 7] = (uint8_t)((src[j + 7] + src[j + stride + 7] + 1)>>1);
-		}
+	}
 }
 
 
@@ -180,40 +149,25 @@ interpolate8x8_halfpel_hv_c(uint8_t * const dst,
 							const uint32_t stride,
 							const uint32_t rounding)
 {
-	intptr_t j;
+	uint32_t i, j;
 
-	if (rounding)
-		for (j = 7*stride; j >= 0; j-=stride)
-		{
-				dst[j + 0] = (uint8_t)((src[j+0] + src[j+1] + src[j+stride+0] + src[j+stride+1] +1)>>2);
-				dst[j + 1] = (uint8_t)((src[j+1] + src[j+2] + src[j+stride+1] + src[j+stride+2] +1)>>2);
-				dst[j + 2] = (uint8_t)((src[j+2] + src[j+3] + src[j+stride+2] + src[j+stride+3] +1)>>2);
-				dst[j + 3] = (uint8_t)((src[j+3] + src[j+4] + src[j+stride+3] + src[j+stride+4] +1)>>2);
-				dst[j + 4] = (uint8_t)((src[j+4] + src[j+5] + src[j+stride+4] + src[j+stride+5] +1)>>2);
-				dst[j + 5] = (uint8_t)((src[j+5] + src[j+6] + src[j+stride+5] + src[j+stride+6] +1)>>2);
-				dst[j + 6] = (uint8_t)((src[j+6] + src[j+7] + src[j+stride+6] + src[j+stride+7] +1)>>2);
-				dst[j + 7] = (uint8_t)((src[j+7] + src[j+8] + src[j+stride+7] + src[j+stride+8] +1)>>2);
+	for (j = 0; j < 8; j++) {
+		for (i = 0; i < 8; i++) {
+			int16_t tot =
+				src[j * stride + i] + src[j * stride + i + 1] +
+				src[j * stride + i + stride] + src[j * stride + i + stride +
+												   1];
+			tot = ((tot + 2 - rounding) >> 2);
+			dst[j * stride + i] = (uint8_t) tot;
 		}
-	else
-		for (j = 7*stride; j >= 0; j-=stride)
-		{
-				dst[j + 0] = (uint8_t)((src[j+0] + src[j+1] + src[j+stride+0] + src[j+stride+1] +2)>>2);
-				dst[j + 1] = (uint8_t)((src[j+1] + src[j+2] + src[j+stride+1] + src[j+stride+2] +2)>>2);
-				dst[j + 2] = (uint8_t)((src[j+2] + src[j+3] + src[j+stride+2] + src[j+stride+3] +2)>>2);
-				dst[j + 3] = (uint8_t)((src[j+3] + src[j+4] + src[j+stride+3] + src[j+stride+4] +2)>>2);
-				dst[j + 4] = (uint8_t)((src[j+4] + src[j+5] + src[j+stride+4] + src[j+stride+5] +2)>>2);
-				dst[j + 5] = (uint8_t)((src[j+5] + src[j+6] + src[j+stride+5] + src[j+stride+6] +2)>>2);
-				dst[j + 6] = (uint8_t)((src[j+6] + src[j+7] + src[j+stride+6] + src[j+stride+7] +2)>>2);
-				dst[j + 7] = (uint8_t)((src[j+7] + src[j+8] + src[j+stride+7] + src[j+stride+8] +2)>>2);
-		}
+	}
 }
-
-
-
 
 /*************************************************************
  * QPEL STUFF STARTS HERE                                    *
  *************************************************************/
+
+#define CLIP(X,A,B) (X < A) ? (A) : ((X > B) ? (B) : (X))
 
 void interpolate8x8_6tap_lowpass_h_c(uint8_t *dst, uint8_t *src, int32_t stride, int32_t rounding)
 {

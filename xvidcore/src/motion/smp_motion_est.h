@@ -26,7 +26,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- *  $Id: smp_motion_est.h,v 1.4 2003-02-15 15:22:19 edgomez Exp $
+ *  $Id: smp_motion_est.h,v 1.2 2002-07-12 12:26:24 suxen_drol Exp $
  *
  ***************************************************************************/
 

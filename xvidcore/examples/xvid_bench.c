@@ -24,29 +24,20 @@
  *  Don't take the checksums and crc too seriouly, they aren't
  *  bullet-proof (should plug some .md5 here)...
  *
- *   compiles best at xvidcore/src-dir with something like 
- *   
- *   gcc -DARCH_IS_IA32 -DARCH_IS_32BIT -o xvid_bench xvid_bench.c  \
- *        ../build/generic/libxvidcore.a -lm
+ *   compiles with something like:
+ *   gcc -o xvid_bench xvid_bench.c  -I../src/ -lxvidcore -lm
  *
  *	History:
  *
  *	06.06.2002  initial coding      -Skal-
- *	27.02.2003  minor changes (compile, sad16v) <gruel@web.de>
  *
  *************************************************************************/
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/time.h>  // for gettimeofday
 #include <string.h>    // for memset
 #include <assert.h>
-
-#ifndef WIN32
-#include <sys/time.h>	// for gettimeofday
-#else
-#include <time.h>
-#endif
-
 
 #include "xvid.h"
 
@@ -65,11 +56,6 @@
 #include "bitstream/cbp.h"
 
 #include <math.h>
-
-#ifndef M_PI
-#define M_PI		3.14159265358979323846
-#endif
-
 const int speed_ref = 100;  // on slow machines, decrease this value
 
 /*********************************************************************
@@ -79,15 +65,9 @@ const int speed_ref = 100;  // on slow machines, decrease this value
  /* returns time in micro-s*/
 double gettime_usec()
 {    
-#ifndef WIN32
   struct timeval  tv;
   gettimeofday(&tv, 0);
   return tv.tv_sec*1.0e6 + tv.tv_usec;
-#else
-	clock_t clk;
-	clk = clock();
-	return clk * 1000000 / CLOCKS_PER_SEC;
-#endif
 }
 
  /* returns squared deviates (mean(v*v)-mean(v)^2) of a 8x8 block */
@@ -219,7 +199,7 @@ void test_dct()
 void test_sad()
 {
   const int nb_tests = 2000*speed_ref;
-  int tst,dummy[4];
+  int tst;
   CPU *cpu;
   int i;
   uint8_t Cur[16*16], Ref1[16*16], Ref2[16*16];
@@ -248,18 +228,10 @@ void test_sad()
 
     t = gettime_usec();
     emms();
-    for(tst=0; tst<nb_tests; ++tst) s = sad16(Cur, Ref1, 16, 65535);
+    for(tst=0; tst<nb_tests; ++tst) s = sad16(Cur, Ref1, 16, -1);
     emms();
     t = (gettime_usec() - t) / nb_tests;
     printf( "%s - sad16   %.3f usec       sad=%d\n", cpu->name, t, s );
-    if (s!=27214) printf( "*** CRC ERROR! ***\n" );
-
-    t = gettime_usec();
-    emms();
-    for(tst=0; tst<nb_tests; ++tst) s = sad16v(Cur, Ref1, 16, dummy);
-    emms();
-    t = (gettime_usec() - t) / nb_tests;
-    printf( "%s - sad16v  %.3f usec       sad=%d\n", cpu->name, t, s );
     if (s!=27214) printf( "*** CRC ERROR! ***\n" );
 
     t = gettime_usec();

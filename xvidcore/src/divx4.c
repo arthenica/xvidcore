@@ -38,7 +38,7 @@
  *  22.12.2001  removed some compiler warnings
  *  16.12.2001  inital version; (c)2001 peter ross <pross@cs.rmit.edu.au>
  *
- *  $Id: divx4.c,v 1.21 2003-02-15 15:22:17 edgomez Exp $
+ *  $Id: divx4.c,v 1.16.2.2 2002-11-02 16:11:06 chl Exp $
  *
  *************************************************************************/
 
@@ -284,7 +284,7 @@ decore(unsigned long key,
 			}
 
 			/* Decode the bitstream */
-			xerr = decoder_decode(dcur->handle, &dcur->xframe, NULL);
+			xerr = decoder_decode(dcur->handle, &dcur->xframe);
 
 			/* Restore the real colorspace for this instance */
 			if (!dframe->render_flag) {
