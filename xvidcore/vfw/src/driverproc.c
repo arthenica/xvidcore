@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: driverproc.c,v 1.7 2004-07-25 02:26:57 suxen_drol Exp $
+ * $Id: driverproc.c,v 1.2.2.3 2004-05-26 05:22:38 syskin Exp $
  *
  ****************************************************************************/
 
@@ -60,7 +60,7 @@ BOOL WINAPI DllMain(
 
 	case DRV_LOAD :
 	case DRV_FREE :
-		return DRVCNF_OK;
+		return DRV_OK;
 
 	case DRV_OPEN :
 		DPRINTF("DRV_OPEN");
@@ -70,7 +70,7 @@ BOOL WINAPI DllMain(
 			
 			if (icopen != NULL && icopen->fccType != ICTYPE_VIDEO)
 			{
-				return DRVCNF_CANCEL;
+				return DRV_CANCEL;
 			}
 
 			codec = malloc(sizeof(CODEC));
@@ -116,27 +116,26 @@ BOOL WINAPI DllMain(
 		clean_dll_bindings(codec);
         status_destroy_always(&codec->status);
 		free(codec);
-		return DRVCNF_OK;
+		return DRV_OK;
 
 	case DRV_DISABLE :
 	case DRV_ENABLE :
-		return DRVCNF_OK;
+		return DRV_OK;
 
 	case DRV_INSTALL :
 	case DRV_REMOVE :
-		return DRVCNF_OK;
+		return DRV_OK;
 
 	case DRV_QUERYCONFIGURE :
 	case DRV_CONFIGURE :
-		return DRVCNF_CANCEL;
+		return DRV_CANCEL;
 
 
 	/* info */
 
 	case ICM_GETINFO :
 		DPRINTF("ICM_GETINFO");
-		
-		if (lParam1 && lParam2 >= sizeof(ICINFO)) {
+		{
 			ICINFO *icinfo = (ICINFO *)lParam1;
 
 			icinfo->fccType = ICTYPE_VIDEO;
@@ -154,8 +153,6 @@ BOOL WINAPI DllMain(
 						
 			return lParam2; /* size of struct */
 		}
-
-		return 0;	/* error */
 		
 		/* state control */
 
@@ -310,11 +307,7 @@ void WINAPI Configure(HWND hwnd, HINSTANCE hinst, LPTSTR lpCmdLine, int nCmdShow
 	dwDriverId = DriverProc(0, 0, DRV_OPEN, 0, 0);
 	if (dwDriverId != (DWORD)NULL)
 	{
-		if (lstrcmpi(lpCmdLine, "about")==0) {
-			DriverProc(dwDriverId, 0, ICM_ABOUT, (LPARAM)GetDesktopWindow(), 0);
-		}else{
-			DriverProc(dwDriverId, 0, ICM_CONFIGURE, (LPARAM)GetDesktopWindow(), 0);
-		}
+		DriverProc(dwDriverId, 0, ICM_CONFIGURE, (LPARAM)GetDesktopWindow(), 0);
 		DriverProc(dwDriverId, 0, DRV_CLOSE, 0, 0);
 	}
 }

@@ -8,17 +8,16 @@ dnl ==========================================================================
 
 AC_PREREQ([2.50])
 
-AC_INIT([XviD], [1.1.0-alpha], [xvid-devel@xvid.org])
+AC_INIT([XviD], [1.0.3], [xvid-devel@xvid.org])
 AC_CONFIG_SRCDIR(configure.in)
 
 dnl Do not forget to increase that when needed.
 API_MAJOR="4"
-API_MINOR="1"
+API_MINOR="0"
 
 dnl NASM version requirement
 minimum_nasm_patch_version=34
 nasm_prog="nasm"
-yasm_prog="yasm"
 
 dnl Default CFLAGS -- Big impact on overall speed
 our_cflags_defaults="-Wall"
@@ -165,7 +164,9 @@ if test x"$assembly" = x"yes" ; then
 		;;	
 		powerpc)
 		AC_MSG_RESULT(PowerPC)
-		ARCHITECTURE="PPC"
+		dnl ATM the ppc port is out of date 
+		dnl ARCHITECTURE="PPC"
+		ARCHITECTURE="GENERIC"
 		;;
 		ia64)
 		AC_MSG_RESULT(ia64)
@@ -298,7 +299,7 @@ case "$target_os" in
 	;;
      *)
         AC_MSG_RESULT([Unknown Platform (Using default -shared -lc -lm)])
-    STATIC_LIB="libxvidcore.\$(STATIC_EXTENSION)"
+	STATIC_LIB="libxvidcore.\$(STATIC_EXTENSION)"
 	SHARED_LIB="libxvidcore.\$(SHARED_EXTENSION)"
 	SPECIFIC_LDFLAGS=""
 	SPECIFIC_CFLAGS=""
@@ -329,161 +330,78 @@ dnl
 if test "$ARCHITECTURE" = "IA32" ; then
 
    dnl
-   dnl Checking for nasm compatible programs
-   dnl yasm is preferred over nasm, because... i can use it
-   dnl to profile assembly code ;-)
+   dnl Checking nasm existence
    dnl
+   AC_CHECK_PROG([ac_nasm], [$nasm_prog], [yes], [no], , [yes])
+   if test "$ac_nasm" = "yes" ; then
 
-   found_nasm_comp_prog="no"
-   chosen_asm_prog=""
-
-   dnl Check for yasm first
-   AC_CHECK_PROG([ac_yasm], [$yasm_prog], [yes], [no], , [yes])
-   if test "$ac_yasm" = "yes" ; then
-     found_nasm_comp_prog="yes"
-     chosen_asm_prog="$yasm_prog"
-   fi
-
-   dnl if yasm hasn't been found, then check for nasm (not buggy version)
-   if test "$found_nasm_comp_prog" = "no" ; then
-       AC_CHECK_PROG([ac_nasm], [$nasm_prog], [yes], [no], , [yes])
-       if test "$ac_nasm" = "yes" ; then
-           dnl
-           dnl Checking nasm patch version
-           dnl
-           AC_MSG_CHECKING([for nasm patch version])
-           nasm_patch=`$nasm_prog -r | cut -d '.' -f 3 | cut -d ' ' -f 1`
-           if test -z $nasm_patch ; then
-              nasm_patch=-1
-           fi
-           AC_MSG_RESULT([$nasm_patch])
+      dnl
+      dnl Checking nasm patch version
+      dnl
+      AC_MSG_CHECKING([for nasm patch version])
+      nasm_patch=`nasm -r | cut -d '.' -f 3 | cut -d ' ' -f 1`
+      if test -z $nasm_patch ; then
+        nasm_patch=-1
+      fi
+      AC_MSG_RESULT([$nasm_patch])
 
 
-           if test "$nasm_patch" -lt "$minimum_nasm_patch_version" ; then
-               AC_MSG_WARN([nasm patch version is too old])
-           else
-               found_nasm_comp_prog="yes"
-		       chosen_asm_prog="$nasm_prog"
-           fi
+      if test "$nasm_patch" -lt "$minimum_nasm_patch_version" ; then
+        AC_MSG_WARN([nasm patch version too old - Compiling generic sources only])
+	ARCHITECTURE="GENERIC"
+      else
+
+         dnl
+         dnl Checking nasm format - win32 or elf
+         dnl
+         AC_MSG_CHECKING([for nasm object format])
+         case "$target_os" in
+              *bsd*|linux*|beos|irix*|solaris*)
+                  AC_MSG_RESULT([elf])
+                  NASM_FORMAT="elf"
+		  PREFIX=""
+                  ;;
+              [[cC]][[yY]][[gG]][[wW]][[iI]][[nN]]*|mingw32*|mks*)
+                  AC_MSG_RESULT([win32])
+                  NASM_FORMAT="win32"
+		  PREFIX="-DPREFIX"
+                  ;;
+          esac
+
+          AS=nasm
+          AFLAGS="-I\$(<D)/ -f $NASM_FORMAT $PREFIX"
+          ASSEMBLY_EXTENSION="asm"
+          ASSEMBLY_SOURCES="SRC_IA32"
        fi
+
+   else
+	AC_MSG_WARN([nasm not found - Compiling generic sources only])
+	ARCHITECTURE="GENERIC"
    fi
 
-   dnl
-   dnl Ok now sort what object format we must use
-   dnl
-   if test "$found_nasm_comp_prog" = "yes" ; then
-       AC_MSG_CHECKING([for asm object format])
-       case "$target_os" in
-           *bsd*|linux*|beos|irix*|solaris*)
-               AC_MSG_RESULT([elf])
-               NASM_FORMAT="elf"
-	       MARK_FUNCS="-DMARK_FUNCS"
-	           PREFIX=""
-               ;;
-           [[cC]][[yY]][[gG]][[wW]][[iI]][[nN]]*|mingw32*|mks*)
-               AC_MSG_RESULT([win32])
-               NASM_FORMAT="win32"
-	       PREFIX="-DPREFIX"
-	       MARK_FUNCS=""
-               ;;
-       esac
-
-       AS="$chosen_asm_prog"
-       AFLAGS="-I\$(<D)/ -f $NASM_FORMAT $PREFIX $MARK_FUNCS"
-       ASSEMBLY_EXTENSION="asm"
-       ASSEMBLY_SOURCES="SRC_IA32"
-   else 
-       AC_MSG_WARN([no correct assembler was found - Compiling generic sources only])
-       ARCHITECTURE="GENERIC"
-   fi
 fi
 
 dnl
 dnl PPC
 dnl
-dnl With the PPC platform we do not use assembly language, we better keep with
-dnl intrinsic altivec functions and types as they are supported by both Apple
-dnl and GNU gcc with very slight changes to code which can be sumed up by:
-dnl
-dnl Apple:
-dnl  - compile with the option -faltivec
-dnl  - define vectors with parentheses vec = (0,0,0,0)
-dnl GNU
-dnl  - compile with -maltivec -mabi=altivec
-dnl  - include <altivec.h> before using intrincic
-dnl  - define vectors with vec = {0,0,0,0}
-dnl
-dnl * The compile time option will be "injected" into SPECIFIC_CFLAGS variable
-dnl * The need for altivec.h will also be injected into SPECIFIC_CFLAGS through
-dnl   a -DHAVE_ALTIVEC_H
-dnl * The vector definition is handled in portab.h thx to
-dnl   HAVE_PARENTHESES/BRACES_ALTIVEC_DECL
-dnl
-PPC_ALTIVEC_SOURCES=""
+
 if test "$ARCHITECTURE" = "PPC" ; then
    AS="\$(CC)"
-   AFLAGS=""
-   ASSEMBLY_EXTENSION=".s"
-   ASSEMBLY_SOURCES=""
-
-   AC_MSG_CHECKING([for altivec.h])
-cat > conftest.c << EOF
-#include <altivec.h>
-int main() { return(0); }
+   AFLAGS="-c"
+   ASSEMBLY_EXTENSION="s"
+   ASSEMBLY_SOURCES="SRC_PPC"
+   AC_MSG_CHECKING([for Altivec support])
+   cat > conftest.S << EOF
+         .text
+         vxor 0,0,0
 EOF
-   if $CC -faltivec -c conftest.c 2>/dev/null 1>/dev/null || \
-      $CC -maltivec -mabi=altivec -c conftest.c 2>/dev/null 1>/dev/null ; then
+   if $CC -c conftest.S 2>/dev/null 1>/dev/null ; then
         AC_MSG_RESULT(yes)
-        SPECIFIC_CFLAGS="$SPECIFIC_CFLAGS -DHAVE_ALTIVEC_H"
-	TEMP_ALTIVEC="-DHAVE_ALTIVEC_H"
+        SPECIFIC_CFLAGS="$SPECIFIC_CFLAGS -DARCH_IS_PPC_ALTIVEC"
+        ASSEMBLY_SOURCES="SRC_ALTIVEC"
    else
         AC_MSG_RESULT(no)
-	TEMP_ALTIVEC=""
    fi
-
-   AC_MSG_CHECKING([for Altivec compiler support])
-cat > conftest.c << EOF
-#ifdef HAVE_ALTIVEC_H
-#include <altivec.h>
-#endif
-
-int main()
-{
-  vector unsigned int vartest2 = (vector unsigned int)(0);
-  vector unsigned int vartest3 = (vector unsigned int)(1);
-  vartest2 = vec_add(vartest2, vartest3);
-  return(0);
-}
-EOF
-   if $CC $TEMP_ALTIVEC -faltivec -c conftest.c 2>/dev/null 1>/dev/null ; then
-        AC_MSG_RESULT([yes (Apple)])
-        SPECIFIC_CFLAGS="$SPECIFIC_CFLAGS -faltivec -DHAVE_ALTIVEC_PARENTHESES_DECL $TEMP_ALTIVEC"
-	PPC_ALTIVEC_SOURCES="SRC_PPC_ALTIVEC"
-   else
-cat > conftest.c << EOF
-#ifdef HAVE_ALTIVEC_H
-#include <altivec.h>
-#endif
-
-int main()
-{
-  vector unsigned int vartest2 = (vector unsigned int){0};
-  vector unsigned int vartest3 = (vector unsigned int){1};
-  vartest2 = vec_add(vartest2, vartest3);
-  return(0);
-}
-EOF
-   if $CC $TEMP_ALTIVEC -maltivec -mabi=altivec -c conftest.c 2>/dev/null 1>/dev/null ; then
-        AC_MSG_RESULT([yes (GNU)])
-        SPECIFIC_CFLAGS="$SPECIFIC_CFLAGS -maltivec -mabi=altivec -DHAVE_ALTIVEC_BRACES_DECL $TEMP_ALTIVEC"
-	PPC_ALTIVEC_SOURCES="SRC_PPC_ALTIVEC"
-   else
-	AC_MSG_RESULT([no (ppc support won't be compiled in)])
-	dnl Only C code can be compiled :-(
-	ARCHITECTURE="GENERIC"
-   fi
-   fi
-
    rm -f conftest.*
 fi
 
@@ -578,7 +496,6 @@ AC_SUBST(CFLAGS)
 AC_SUBST(SPECIFIC_LDFLAGS)
 AC_SUBST(SPECIFIC_CFLAGS)
 AC_SUBST(DCT_IA64_SOURCES)
-AC_SUBST(PPC_ALTIVEC_SOURCES)
 AC_SUBST(RANLIB)
 AC_SUBST(API_MAJOR)
 AC_SUBST(API_MINOR)

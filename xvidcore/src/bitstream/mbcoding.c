@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: mbcoding.c,v 1.50 2004-12-10 04:10:12 syskin Exp $
+ * $Id: mbcoding.c,v 1.46.2.1 2004-08-22 13:15:15 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -199,7 +199,8 @@ init_vlc_tables(void)
 static __inline void
 CodeVector(Bitstream * bs,
 		   int32_t value,
-		   int32_t f_code)
+		   int32_t f_code,
+		   Statistics * pStat)
 {
 
 	const int scale_factor = 1 << (f_code - 1);
@@ -210,6 +211,9 @@ CodeVector(Bitstream * bs,
 
 	if (value > (cmp - 1))
 		value -= 64 * scale_factor;
+
+	pStat->iMvSum += value * value;
+	pStat->iMvCount++;
 
 	if (value == 0) {
 		BitstreamPutBits(bs, mb_motion_table[32].code,
@@ -575,8 +579,8 @@ CodeBlockInter(const FRAMEINFO * const frame,
 	/* code motion vector(s) if motion is local  */
 	if (!pMB->mcsel)
 		for (i = 0; i < (pMB->mode == MODE_INTER4V ? 4 : 1); i++) {
-			CodeVector(bs, pMB->pmvs[i].x, frame->fcode);
-			CodeVector(bs, pMB->pmvs[i].y, frame->fcode);
+			CodeVector(bs, pMB->pmvs[i].x, frame->fcode, pStat);
+			CodeVector(bs, pMB->pmvs[i].y, frame->fcode, pStat);
 		}
 
 	bits = BitstreamPos(bs);
@@ -605,12 +609,6 @@ MBCoding(const FRAMEINFO * const frame,
 {
 	if (frame->coding_type != I_VOP)
 			BitstreamPutBit(bs, 0);	/* not_coded */
-
-	if (frame->vop_flags & XVID_VOP_GREYSCALE) {
-		pMB->cbp &= 0x3C;		/* keep only bits 5-2 */
-		qcoeff[4*64+0]=0;		/* for INTRA DC value is saved */
-		qcoeff[5*64+0]=0;
-	}
 
 	if (pMB->mode == MODE_INTRA || pMB->mode == MODE_INTRA_Q)
 		CodeBlockIntra(frame, pMB, qcoeff, bs, pStat);
@@ -698,6 +696,7 @@ MBCodingBVOP(const FRAMEINFO * const frame,
 		scan_tables[2] : scan_tables[0];
 	int bits;
 
+
 /*	------------------------------------------------------------------
 		when a block is skipped it is decoded DIRECT(0,0)
 		hence is interpolated from forward & backward frames
@@ -749,17 +748,17 @@ MBCodingBVOP(const FRAMEINFO * const frame,
 
 	switch (mb->mode) {
 		case MODE_INTERPOLATE:
-			CodeVector(bs, mb->pmvs[1].x, vcode); /* forward vector of interpolate mode */
-			CodeVector(bs, mb->pmvs[1].y, vcode);
+			CodeVector(bs, mb->pmvs[1].x, vcode, pStat); /* forward vector of interpolate mode */
+			CodeVector(bs, mb->pmvs[1].y, vcode, pStat);
 		case MODE_BACKWARD:
 			vcode = bcode;
 		case MODE_FORWARD:
-			CodeVector(bs, mb->pmvs[0].x, vcode);
-			CodeVector(bs, mb->pmvs[0].y, vcode);
+			CodeVector(bs, mb->pmvs[0].x, vcode, pStat);
+			CodeVector(bs, mb->pmvs[0].y, vcode, pStat);
 			break;
 		case MODE_DIRECT:
-			CodeVector(bs, mb->pmvs[3].x, 1);	/* fcode is always 1 for delta vector */
-			CodeVector(bs, mb->pmvs[3].y, 1);	/* prediction is always (0,0) */
+			CodeVector(bs, mb->pmvs[3].x, 1, pStat);	/* fcode is always 1 for delta vector */
+			CodeVector(bs, mb->pmvs[3].y, 1, pStat);	/* prediction is always (0,0) */
 		default: break;
 	}
 
@@ -961,8 +960,6 @@ get_dc_size_chrom(Bitstream * bs)
 
 }
 
-#define GET_BITS(cache, n) ((cache)>>(32-(n)))
-
 static __inline int
 get_coeff(Bitstream * bs,
 		  int *run,
@@ -975,13 +972,11 @@ get_coeff(Bitstream * bs,
 	int32_t level;
 	REVERSE_EVENT *reverse_event;
 
-	uint32_t cache = BitstreamShowBits(bs, 32);
-	
 	if (short_video_header)		/* inter-VLCs will be used for both intra and inter blocks */
 		intra = 0;
 
-	if (GET_BITS(cache, 7) != ESCAPE) {
-		reverse_event = &DCT3D[intra][GET_BITS(cache, 12)];
+	if (BitstreamShowBits(bs, 7) != ESCAPE) {
+		reverse_event = &DCT3D[intra][BitstreamShowBits(bs, 12)];
 
 		if ((level = reverse_event->event.level) == 0)
 			goto error;
@@ -989,35 +984,31 @@ get_coeff(Bitstream * bs,
 		*last = reverse_event->event.last;
 		*run  = reverse_event->event.run;
 
-		/* Don't forget to update the bitstream position */
-		BitstreamSkip(bs, reverse_event->len+1);
+		BitstreamSkip(bs, reverse_event->len);
 
-		return (GET_BITS(cache, reverse_event->len+1)&0x01) ? -level : level;
+		return BitstreamGetBits(bs, 1) ? -level : level;
 	}
 
-	/* flush 7bits of cache */
-	cache <<= 7;
+	BitstreamSkip(bs, 7);
 
 	if (short_video_header) {
 		/* escape mode 4 - H.263 type, only used if short_video_header = 1  */
-		*last =  GET_BITS(cache, 1);
-		*run  = (GET_BITS(cache, 7) &0x3f);
-		level = (GET_BITS(cache, 15)&0xff);
+		*last = BitstreamGetBit(bs);
+		*run = BitstreamGetBits(bs, 6);
+		level = BitstreamGetBits(bs, 8);
 
 		if (level == 0 || level == 128)
 			DPRINTF(XVID_DEBUG_ERROR, "Illegal LEVEL for ESCAPE mode 4: %d\n", level);
 
-		/* We've "eaten" 22 bits */
-		BitstreamSkip(bs, 22);
-
 		return (level << 24) >> 24;
 	}
 
-	if ((mode = GET_BITS(cache, 2)) < 3) {
-		const int skip[3] = {1, 1, 2};
-		cache <<= skip[mode];
+	mode = BitstreamShowBits(bs, 2);
 
-		reverse_event = &DCT3D[intra][GET_BITS(cache, 12)];
+	if (mode < 3) {
+		BitstreamSkip(bs, (mode == 2) ? 2 : 1);
+
+		reverse_event = &DCT3D[intra][BitstreamShowBits(bs, 12)];
 
 		if ((level = reverse_event->event.level) == 0)
 			goto error;
@@ -1025,28 +1016,23 @@ get_coeff(Bitstream * bs,
 		*last = reverse_event->event.last;
 		*run  = reverse_event->event.run;
 
-		if (mode < 2) {
-			/* first escape mode, level is offset */
-			level += max_level[intra][*last][*run];
-		} else {
-			/* second escape mode, run is offset */
-			*run += max_run[intra][*last][level] + 1;
-		}
-		
-		/* Update bitstream position */
-		BitstreamSkip(bs, 7 + skip[mode] + reverse_event->len + 1);
+		BitstreamSkip(bs, reverse_event->len);
 
-		return (GET_BITS(cache, reverse_event->len+1)&0x01) ? -level : level;
+		if (mode < 2)			/* first escape mode, level is offset */
+			level += max_level[intra][*last][*run];
+		else					/* second escape mode, run is offset */
+			*run += max_run[intra][*last][level] + 1;
+
+		return BitstreamGetBits(bs, 1) ? -level : level;
 	}
 
 	/* third escape mode - fixed length codes */
-	cache <<= 2;
-	*last =  GET_BITS(cache, 1);
-	*run  = (GET_BITS(cache, 7)&0x3f);
-	level = (GET_BITS(cache, 20)&0xfff);
-	
-	/* Update bitstream position */
-	BitstreamSkip(bs, 30);
+	BitstreamSkip(bs, 2);
+	*last = BitstreamGetBits(bs, 1);
+	*run = BitstreamGetBits(bs, 6);
+	BitstreamSkip(bs, 1);		/* marker */
+	level = BitstreamGetBits(bs, 12);
+	BitstreamSkip(bs, 1);		/* marker */
 
 	return (level << 20) >> 20;
 
@@ -1088,17 +1074,12 @@ get_intra_block(Bitstream * bs,
 }
 
 void
-get_inter_block_h263(
-		Bitstream * bs,
-		int16_t * block,
-		int direction,
-		const int quant,
-		const uint16_t *matrix)
+get_inter_block(Bitstream * bs,
+				int16_t * block,
+				int direction)
 {
 
 	const uint16_t *scan = scan_tables[direction];
-	const uint16_t quant_m_2 = quant << 1;
-	const uint16_t quant_add = (quant & 1 ? quant : quant - 1);
 	int p;
 	int level;
 	int run;
@@ -1113,58 +1094,17 @@ get_inter_block_h263(
 		}
 		p += run;
 
-		if (level < 0) {
-			level = level*quant_m_2 - quant_add;
-			block[scan[p]] = (level >= -2048 ? level : -2048);
-		} else {
-			level = level * quant_m_2 + quant_add;
-			block[scan[p]] = (level <= 2047 ? level : 2047);
-		}		
-		p++;
-	} while (!last);
-}
+		block[scan[p]] = level;
 
-void
-get_inter_block_mpeg(
-		Bitstream * bs,
-		int16_t * block,
-		int direction,
-		const int quant,
-		const uint16_t *matrix)
-{
-	const uint16_t *scan = scan_tables[direction];
-	uint32_t sum = 0;
-	int p;
-	int level;
-	int run;
-	int last;
+		DPRINTF(XVID_DEBUG_COEFF,"block[%i] %i\n", scan[p], level);
+		/* DPRINTF(XVID_DEBUG_COEFF,"block[%i] %i %08x\n", scan[p], level, BitstreamShowBits(bs, 32)); */
 
-	p = 0;
-	do {
-		level = get_coeff(bs, &run, &last, 0, 0);
-		if (run == -1) {
-			DPRINTF(XVID_DEBUG_ERROR,"fatal: invalid run");
-			break;
+		if (level < -2047 || level > 2047) {
+			DPRINTF(XVID_DEBUG_ERROR,"warning: inter overflow %i\n", level);
 		}
-		p += run;
-
-		if (level < 0) {
-			level = ((2 * -level + 1) * matrix[scan[p]] * quant) >> 4;
-			block[scan[p]] = (level <= 2048 ? -level : -2048);
-		} else {
-			level = ((2 *  level + 1) * matrix[scan[p]] * quant) >> 4;
-			block[scan[p]] = (level <= 2047 ? level : 2047);
-		}
-
-		sum ^= block[scan[p]];
-		
 		p++;
 	} while (!last);
 
-	/*	mismatch control */
-	if ((sum & 1) == 0) {
-		block[63] ^= 1;
-	}
 }
 
 

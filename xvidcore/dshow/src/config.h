@@ -32,14 +32,12 @@ typedef struct
 	int nBrightness;
 	int nDeblock_Y;
 	int nDeblock_UV;
-	int nDering_Y;
-	int nDering_UV;
+	int nDering;
 	int nFilmEffect;
 	int nFlipVideo;
 	int nForceColorspace;
 	unsigned int supported_4cc;
 	int videoinfo_compat;
-	int aspect_ratio;
 } CONFIG;
 
 
@@ -59,4 +57,3 @@ BOOL CALLBACK adv_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 
 #endif
-

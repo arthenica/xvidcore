@@ -19,7 +19,7 @@
 ; *  along with this program ; if not, write to the Free Software
 ; *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 ; *
-; * $Id: cbp_3dne.asm,v 1.5 2004-08-29 10:02:38 edgomez Exp $
+; * $Id: cbp_3dne.asm,v 1.3 2004-03-22 22:36:23 edgomez Exp $
 ; *
 ; ***************************************************************************/
 
@@ -34,21 +34,13 @@ BITS 32
 
 %macro cglobal 1
 	%ifdef PREFIX
-		%ifdef MARK_FUNCS
-			global _%1:function %1.endfunc-%1
-			%define %1 _%1:function %1.endfunc-%1
-		%else
-			global _%1
-			%define %1 _%1
-		%endif
+		global _%1
+		%define %1 _%1
 	%else
-		%ifdef MARK_FUNCS
-			global %1:function %1.endfunc-%1
-		%else
-			global %1
-		%endif
+		global %1
 	%endif
 %endmacro
+
 
 %macro calc_cbp 1
   pshufw mm0, [eax], 229 ; =11100101
@@ -121,5 +113,3 @@ calc_cbp_3dne:
   adc eax, eax
   add esp, byte 24
   ret
-.endfunc
-

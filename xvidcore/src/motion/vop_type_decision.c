@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: vop_type_decision.c,v 1.5 2004-12-05 04:53:01 syskin Exp $
+ * $Id: vop_type_decision.c,v 1.2 2004-03-22 22:36:24 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -92,7 +92,7 @@ MEanalyzeMB (	const uint8_t * const pRef,
 	for (i = 0; i < 5; i++) Data->iMinSAD[i] = MV_MAX_ERROR;
 
 	get_range(&Data->min_dx, &Data->max_dx, &Data->min_dy, &Data->max_dy, x, y, 4,
-			pParam->width, pParam->height, Data->iFcode - Data->qpel - 1, 0);
+			pParam->width, pParam->height, Data->iFcode - Data->qpel - 1, 0, 0);
 
 	Data->Cur = pCur + (x + y * pParam->edged_width) * 16;
 	Data->RefP[0] = pRef + (x + y * pParam->edged_width) * 16;
@@ -129,7 +129,7 @@ MEanalyzeMB (	const uint8_t * const pRef,
 		} else simplicity++;
 
 		if (*Data->iMinSAD > 500) /* refinement from 2-pixel to 1-pixel */
-			xvid_me_SubpelRefine(Data->currentMV[0], Data, CheckCandidate32I, 0);
+			xvid_me_SubpelRefine(Data, CheckCandidate32I);
 		else simplicity++;
 	} else simplicity++;
 

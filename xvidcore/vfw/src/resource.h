@@ -2,7 +2,6 @@
 // Microsoft Developer Studio generated include file.
 // Used by resource.rc
 //
-#define IDC_LICENSE                     3
 #define IDD_MAIN                        100
 #define IDD_GLOBAL                      101
 #define IDD_QUANT                       102
@@ -27,8 +26,6 @@
 #define IDD_STATUS                      125
 #define IDD_AR                          126
 #define IDD_BITRATE                     127
-#define IDD_LICENSE                     129
-#define IDR_GPL                         131
 #define WIZ_CYDLG                       140
 #define PROP_MIN_CYDLG                  144
 #define PROP_SM_CYDLG                   188
@@ -391,9 +388,7 @@
 #define IDC_TURBO                       1369
 #define IDC_DEC_DUV                     1370
 #define IDC_DEC_DR                      1371
-#define IDC_DEC_DRY                     1371
 #define IDC_DEBUGOUTPUT                 1372
-#define IDC_DEC_DRUV                    1372
 #define IDC_SHOWINTERNALS               1373
 #define IDC_DEC_FE                      1374
 #define IDC_BITRATE_TSIZE               1375
@@ -414,18 +409,14 @@
 #define IDC_BITRATE_ASIZE               1390
 #define IDC_BITRATE_ASELECT             1391
 #define IDC_BITRATE_ADV                 1392
-#define IDC_DEC_BRIGHTNESS              1393
-#define IDC_TFF                         1394
-#define IDC_VHQ_BFRAME                  1395
-#define IDC_LICENSE_TEXT                1396
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        132
+#define _APS_NEXT_RESOURCE_VALUE        128
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1397
+#define _APS_NEXT_CONTROL_VALUE         1393
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

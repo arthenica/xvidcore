@@ -78,7 +78,7 @@ HWND g_hTooltip;
 static int g_use_bitrate = 1;
 
 
-int pp_brightness, pp_dy, pp_duv, pp_fe, pp_dry, pp_druv; /* decoder options */
+int pp_dy, pp_duv, pp_dr, pp_fe; /* decoder options */
 
 /* enumerates child windows, assigns tooltips */
 BOOL CALLBACK enum_tooltips(HWND hWnd, LPARAM lParam)
@@ -104,7 +104,7 @@ BOOL CALLBACK enum_tooltips(HWND hWnd, LPARAM lParam)
 /* MPEG-4 PROFILES/LEVELS ============================================================== */
 /* ===================================================================================== */
 
-#define DXN_PROFILES
+
 
 /* default vbv_occupancy is (64/170)*vbv_buffer_size */
 
@@ -169,15 +169,13 @@ typedef struct {
 } named_int_t;
 
 
-#define NO_AUDIO	7
+#define NO_AUDIO	5
 static const named_int_t audio_type_list[] = {
 	{	"MP3-CBR",		1000,	48000/1152/6					},
 	{	"MP3-VBR",		  24,	48000/1152/6					},
 	{	"OGG",	   /*?*/1000,	48000*(0.7F/1024 + 0.3F/180) 	},
 	{	"AC3",			  64,	48000/1536/6					},
 	{	"DTS",			  21,	/*?*/48000/1152/6				},
-	{	"AAC",			  21,	48000/1024/6					},
-	{	"HE-AAC",		  42,	48000/1024/6					},
 	{	"(None)",		   0,	0								},
 };
 		
@@ -200,7 +198,6 @@ static const REG_INT reg_ints[] = {
 	{"quant_type",				&reg.quant_type,				0},
 	{"lum_masking",				&reg.lum_masking,				0},
 	{"interlacing",				&reg.interlacing,				0},
-	{"tff",						&reg.tff,						0},
 	{"qpel",					&reg.qpel,						0},
 	{"gmc",						&reg.gmc,						0},
 	{"reduced_resolution",		&reg.reduced_resolution,		0},
@@ -257,7 +254,6 @@ static const REG_INT reg_ints[] = {
 	/* motion */
 	{"motion_search",			&reg.motion_search,				6},
 	{"vhq_mode",				&reg.vhq_mode,					1},
-	{"vhq_bframe",				&reg.vhq_bframe,				0},
 	{"chromame",				&reg.chromame,					1},
 	{"cartoon_mode",			&reg.cartoon_mode,				0},
 	{"turbo",					&reg.turbo,						0},
@@ -280,17 +276,15 @@ static const REG_INT reg_ints[] = {
 	{"display_status",			&reg.display_status,			1},
 	
 	/* decoder, shared with dshow */
-	{"Brightness",				&pp_brightness,					0},
 	{"Deblock_Y",				&pp_dy,							0},
 	{"Deblock_UV",				&pp_duv,						0},
-	{"Dering_Y",				&pp_dry,						0},
-	{"Dering_UV",				&pp_druv,						0},
+	{"Dering",					&pp_dr,							0},
 	{"FilmEffect",				&pp_fe,							0},
 	
 };
 
 static const REG_STR reg_strs[] = {
-	{"profile",					reg.profile_name,				"(unrestricted)"},
+	{"profile",					reg.profile_name,				"AS @ L5"},
 	{"stats",					reg.stats,						CONFIG_2PASS_FILE},
 };
 
@@ -812,11 +806,6 @@ static void adv_init(HWND hDlg, int idd, CONFIG * config)
 		SendDlgItemMessage(hDlg, IDC_FOURCC, CB_ADDSTRING, 0, (LPARAM)"DIVX");
 		SendDlgItemMessage(hDlg, IDC_FOURCC, CB_ADDSTRING, 0, (LPARAM)"DX50");
 		break;
-
-	case IDD_DEC :
-		SendDlgItemMessage(hDlg, IDC_DEC_BRIGHTNESS, TBM_SETRANGE, (WPARAM)TRUE, (LPARAM)MAKELONG(-96, 96));
-		SendDlgItemMessage(hDlg, IDC_DEC_BRIGHTNESS, TBM_SETTICFREQ, (WPARAM)16, (LPARAM)0);
-		break;
 	}
 }
 
@@ -843,7 +832,6 @@ static void adv_mode(HWND hDlg, int idd, CONFIG * config)
 		EnableDlgWindow(hDlg, IDC_QUANTMATRIX, custom_quant);
 		EnableDlgWindow(hDlg, IDC_LUMMASK, profiles[profile].flags&PROFILE_ADAPTQUANT);
 		EnableDlgWindow(hDlg, IDC_INTERLACING, profiles[profile].flags&PROFILE_INTERLACE);
-		EnableDlgWindow(hDlg, IDC_TFF, IsDlgChecked(hDlg, IDC_INTERLACING));
 		EnableDlgWindow(hDlg, IDC_QPEL, profiles[profile].flags&PROFILE_QPEL);
 		EnableDlgWindow(hDlg, IDC_GMC, profiles[profile].flags&PROFILE_GMC);
 		EnableDlgWindow(hDlg, IDC_REDUCED, profiles[profile].flags&PROFILE_REDUCED);
@@ -940,11 +928,7 @@ static void adv_mode(HWND hDlg, int idd, CONFIG * config)
 			/* step 2: calculate audio_size (kbytes)*/
 			if (audio_type!=NO_AUDIO) {
 				if (audio_mode==0) {
-					audio_size = (int)( (1000.0 * duration * audio_rate) / (8.0*1024) );
-					SetDlgItemInt(hDlg, IDC_BITRATE_ASIZE, audio_size, TRUE);
-				}else{
-					int tmp_rate = (int)( (audio_size * 8.0 * 1024) / (1000.0 * duration) );
-					SetDlgItemInt(hDlg, IDC_BITRATE_ARATE, tmp_rate, TRUE);
+					audio_size = (1000 * duration * audio_rate) / (8*1024);
 				}
 			}else{
 				audio_size = 0;
@@ -984,8 +968,8 @@ static void adv_mode(HWND hDlg, int idd, CONFIG * config)
 				overhead /= 1024;
 				break;
 
-			case 3 :	/* alexnoe formula */
-				overhead = (int)( (target_size - subtitle_size) * (28.0/4224.0 + (1.0/255.0)) );
+			case 3 :	/* OGM: inaccurate model */
+				overhead = (int)(0.0039F * (target_size - subtitle_size));
 				break;
 
 			default	:	/* (none) */
@@ -1057,7 +1041,6 @@ static void adv_upload(HWND hDlg, int idd, CONFIG * config)
 		SendDlgItemMessage(hDlg, IDC_QUANTTYPE, CB_SETCURSEL, config->quant_type, 0);
 		CheckDlg(hDlg, IDC_LUMMASK, config->lum_masking);
   		CheckDlg(hDlg, IDC_INTERLACING, config->interlacing);
-		CheckDlg(hDlg, IDC_TFF, config->tff);
 		CheckDlg(hDlg, IDC_QPEL, config->qpel);
   		CheckDlg(hDlg, IDC_GMC, config->gmc);
 		CheckDlg(hDlg, IDC_REDUCED, config->reduced_resolution);
@@ -1142,7 +1125,6 @@ static void adv_upload(HWND hDlg, int idd, CONFIG * config)
 	case IDD_MOTION :
 		SendDlgItemMessage(hDlg, IDC_MOTION, CB_SETCURSEL, config->motion_search, 0);
 		SendDlgItemMessage(hDlg, IDC_VHQ, CB_SETCURSEL, config->vhq_mode, 0);
-		CheckDlg(hDlg, IDC_VHQ_BFRAME, config->vhq_bframe);
 		CheckDlg(hDlg, IDC_CHROMAME, config->chromame);
 		CheckDlg(hDlg, IDC_CARTOON, config->cartoon_mode);
 		CheckDlg(hDlg, IDC_TURBO, config->turbo);
@@ -1180,14 +1162,10 @@ static void adv_upload(HWND hDlg, int idd, CONFIG * config)
 		break;
 
 	case IDD_DEC :
-		SendDlgItemMessage(hDlg, IDC_DEC_BRIGHTNESS, TBM_SETPOS, (WPARAM)TRUE, (LPARAM)pp_brightness);
 		CheckDlg(hDlg, IDC_DEC_DY,	pp_dy);
 		CheckDlg(hDlg, IDC_DEC_DUV,	pp_duv);
-		CheckDlg(hDlg, IDC_DEC_DRY,	pp_dry);
-		CheckDlg(hDlg, IDC_DEC_DRUV,pp_druv);
+		CheckDlg(hDlg, IDC_DEC_DR,	pp_dr);
 		CheckDlg(hDlg, IDC_DEC_FE,	pp_fe);
-		EnableDlgWindow(hDlg, IDC_DEC_DRY, pp_dy);
-		EnableDlgWindow(hDlg, IDC_DEC_DRUV, pp_duv);
 		break;
 	}
 }
@@ -1205,7 +1183,6 @@ static void adv_download(HWND hDlg, int idd, CONFIG * config)
 		config->quant_type = SendDlgItemMessage(hDlg, IDC_QUANTTYPE, CB_GETCURSEL, 0, 0);
 		config->lum_masking = IsDlgChecked(hDlg, IDC_LUMMASK);
 		config->interlacing = IsDlgChecked(hDlg, IDC_INTERLACING);
-		config->tff = IsDlgChecked(hDlg, IDC_TFF);
 		config->qpel = IsDlgChecked(hDlg, IDC_QPEL);
 		config->gmc = IsDlgChecked(hDlg, IDC_GMC);
 		config->reduced_resolution = IsDlgChecked(hDlg, IDC_REDUCED);
@@ -1325,7 +1302,6 @@ static void adv_download(HWND hDlg, int idd, CONFIG * config)
 	case IDD_MOTION :
 		config->motion_search = SendDlgItemMessage(hDlg, IDC_MOTION, CB_GETCURSEL, 0, 0);
 		config->vhq_mode = SendDlgItemMessage(hDlg, IDC_VHQ, CB_GETCURSEL, 0, 0);
-		config->vhq_bframe = IsDlgButtonChecked(hDlg, IDC_VHQ_BFRAME);
 		config->chromame = IsDlgChecked(hDlg, IDC_CHROMAME);
 		config->cartoon_mode = IsDlgChecked(hDlg, IDC_CARTOON);
 		config->turbo = IsDlgChecked(hDlg, IDC_TURBO);
@@ -1372,11 +1348,9 @@ static void adv_download(HWND hDlg, int idd, CONFIG * config)
 		break;
 
 	case IDD_DEC :
-		pp_brightness = SendDlgItemMessage(hDlg, IDC_DEC_BRIGHTNESS, TBM_GETPOS, (WPARAM)NULL, (LPARAM)NULL);
 		pp_dy = IsDlgChecked(hDlg, IDC_DEC_DY);
 		pp_duv = IsDlgChecked(hDlg, IDC_DEC_DUV);
-		pp_dry = IsDlgChecked(hDlg, IDC_DEC_DRY);
-		pp_druv = IsDlgChecked(hDlg, IDC_DEC_DRUV);
+		pp_dr = IsDlgChecked(hDlg, IDC_DEC_DR);
 		pp_fe = IsDlgChecked(hDlg, IDC_DEC_FE);
 		break;
 	}
@@ -1409,8 +1383,6 @@ static BOOL CALLBACK adv_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam
 		{
 			switch (LOWORD(wParam))
 			{
-			case IDC_INTERLACING :
-			case IDC_VHQ_BFRAME :
 			case IDC_BVOP :
 			case IDC_ZONE_MODE_WEIGHT :
 			case IDC_ZONE_MODE_QUANT :
@@ -1521,11 +1493,7 @@ static BOOL CALLBACK adv_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam
 				CheckRadioButton(hDlg, IDC_AR, IDC_PAR, IDC_AR);
 				adv_mode(hDlg, psi->idd, psi->config);
 				break;
-			case IDC_DEC_DY:
-			case IDC_DEC_DUV:
-				EnableDlgWindow(hDlg, IDC_DEC_DRY, IsDlgChecked(hDlg, IDC_DEC_DY));
-				EnableDlgWindow(hDlg, IDC_DEC_DRUV, IsDlgChecked(hDlg, IDC_DEC_DUV));
-				break;
+
 			default :
 				return TRUE;
 			}
@@ -2096,61 +2064,6 @@ BOOL CALLBACK main_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 }
 
 
-/* ===================================================================================== */
-/* LICENSE DIALOG ====================================================================== */
-/* ===================================================================================== */
-
-static BOOL CALLBACK license_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
-{
-	switch (uMsg)
-	{
-	case WM_INITDIALOG :
-		{
-			HRSRC hRSRC;
-			HGLOBAL hGlobal = NULL;
-			if ((hRSRC = FindResource(g_hInst, MAKEINTRESOURCE(IDR_GPL), "TEXT"))) {
-				if ((hGlobal = LoadResource(g_hInst, hRSRC))) {
-					LPVOID lpData;
-					if ((lpData = LockResource(hGlobal))) {
-						SendDlgItemMessage(hDlg, IDC_LICENSE_TEXT, WM_SETFONT, (WPARAM)GetStockObject(ANSI_FIXED_FONT), MAKELPARAM(TRUE, 0));
-						SetDlgItemText(hDlg, IDC_LICENSE_TEXT, lpData);
-						SendDlgItemMessage(hDlg, IDC_LICENSE_TEXT, EM_SETSEL, (WPARAM)-1, (LPARAM)0);
-					}
-				}
-			}
-			SetWindowLong(hDlg, GWL_USERDATA, (LONG)hGlobal);
-		}
-		break;
-
-	case WM_DESTROY :
-		{
-			HGLOBAL hGlobal = (HGLOBAL)GetWindowLong(hDlg, GWL_USERDATA);
-			if (hGlobal) {
-				FreeResource(hGlobal);
-			}
-		}
-		break;
-
-	case WM_COMMAND :
-		if (HIWORD(wParam) == BN_CLICKED) {
-			switch(LOWORD(wParam)) {
-			case IDOK :
-			case IDCANCEL :
-				EndDialog(hDlg, 0);
-				break;
-			default :
-				return 0;
-			}
-			break;
-		}
-		break;
-
-	default :
-		return 0;
-	}
-
-	return 1;
-}
 
 /* ===================================================================================== */
 /* ABOUT DIALOG ======================================================================== */
@@ -2218,11 +2131,12 @@ BOOL CALLBACK about_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		return 0;
 
 	case WM_COMMAND :
-		if (LOWORD(wParam) == IDC_WEBSITE && HIWORD(wParam) == STN_CLICKED)	{
+		if (LOWORD(wParam) == IDC_WEBSITE && HIWORD(wParam) == STN_CLICKED)
+		{
 			ShellExecute(hDlg, "open", XVID_WEBSITE, NULL, NULL, SW_SHOWNORMAL);
-		}else if (LOWORD(wParam) == IDC_LICENSE) {
-			DialogBoxParam(g_hInst, MAKEINTRESOURCE(IDD_LICENSE), hDlg, license_proc, (LPARAM)0);
-		} else if (LOWORD(wParam) == IDOK || LOWORD(wParam) == IDCANCEL) {
+		}
+		else if (LOWORD(wParam) == IDOK || LOWORD(wParam) == IDCANCEL)
+		{
 			EndDialog(hDlg, LOWORD(wParam));
 		}
 		break;

@@ -21,7 +21,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid_encraw.c,v 1.16 2004-11-19 09:41:06 chl Exp $
+ * $Id: xvid_encraw.c,v 1.13.2.1 2004-03-28 12:20:14 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -152,7 +152,6 @@ static int ARG_PACKED = 0;
 static int ARG_DEBUG = 0;
 static int ARG_VOPDEBUG = 0;
 static int ARG_GMC = 0;
-static int ARG_INTERLACING = 0;
 static int ARG_QPEL = 0;
 static int ARG_CLOSED_GOP = 0;
 
@@ -348,8 +347,6 @@ main(int argc,
 			ARG_QPEL = 1;
 		} else if (strcmp("-gmc", argv[i]) == 0) {
 			ARG_GMC = 1;
-		} else if (strcmp("-interlaced", argv[i]) == 0) {
-		 	ARG_INTERLACING = 1;
 		} else if (strcmp("-closed_gop", argv[i]) == 0) {
 			ARG_CLOSED_GOP = 1;
 		} else if (strcmp("-help", argv[i])) {
@@ -699,7 +696,6 @@ usage()
 	fprintf(stderr, " -quality integer: quality ([0..%d])\n", ME_ELEMENTS - 1);
 	fprintf(stderr, " -qpel           : use quarter pixel ME\n");
 	fprintf(stderr, " -gmc            : use global motion compensation\n");
-	fprintf(stderr, " -interlaced     : use interlaced encoding (this is NOT a deinterlacer!)\n");
 	fprintf(stderr, " -packed         : packed mode\n");
 	fprintf(stderr, " -closed_gop     : closed GOP mode\n");
 	fprintf(stderr, " -lumimasking    : use lumimasking algorithm\n");
@@ -954,13 +950,6 @@ enc_init(int use_assembler)
 		rc2pass2.filename = ARG_PASS2;
 		rc2pass2.bitrate = ARG_BITRATE;
 
-/*		An example of activating VBV could look like this 
-		rc2pass2.vbv_size     =  3145728;
-		rc2pass2.vbv_initial  =  2359296;
-		rc2pass2.vbv_maxrate  =  4000000;
-		rc2pass2.vbv_peakrate = 10000000;
-*/
-
 		plugins[xvid_enc_create.num_plugins].func = xvid_plugin_2pass2;
 		plugins[xvid_enc_create.num_plugins].param = &rc2pass2;
 		xvid_enc_create.num_plugins++;
@@ -1102,8 +1091,6 @@ enc_main(unsigned char *image,
 		xvid_enc_frame.vol_flags |= XVID_VOL_QUARTERPEL;
 	if (ARG_GMC)
 		xvid_enc_frame.vol_flags |= XVID_VOL_GMC;
-	if (ARG_INTERLACING)
-		xvid_enc_frame.vol_flags |= XVID_VOL_INTERLACING;
 
 	/* Set up core's general features */
 	xvid_enc_frame.vop_flags = vop_presets[ARG_QUALITY];

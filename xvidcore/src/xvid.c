@@ -3,7 +3,7 @@
  *  XVID MPEG-4 VIDEO CODEC
  *  - Native API implementation  -
  *
- *  Copyright(C) 2001-2004 Peter Ross <pross@xvid.org>
+ *  Copyright(C) 2001-2003 Peter Ross <pross@xvid.org>
  *
  *  This program is free software ; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid.c,v 1.58 2004-12-09 23:02:54 edgomez Exp $
+ * $Id: xvid.c,v 1.48.2.6 2004-12-19 12:04:27 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -36,6 +36,7 @@
 #include "dct/fdct.h"
 #include "image/colorspace.h"
 #include "image/interpolate8x8.h"
+#include "image/reduced.h"
 #include "utils/mem_transfer.h"
 #include "utils/mbfunctions.h"
 #include "quant/quant.h"
@@ -51,9 +52,10 @@
 unsigned int xvid_debug = 0; /* xvid debug mask */
 #endif
 
-#if defined(ARCH_IS_IA32) && defined(_MSC_VER)
+#if defined(ARCH_IS_IA32)
+#if defined(_MSC_VER)
 #	include <windows.h>
-#elif defined(ARCH_IS_IA32) || defined(ARCH_IS_PPC)
+#else
 #	include <signal.h>
 #	include <setjmp.h>
 
@@ -76,50 +78,41 @@ unsigned int xvid_debug = 0; /* xvid debug mask */
  *   0 : SIGILL was *not* signalled
  *   1 : SIGILL was signalled
  */
-#if defined(ARCH_IS_IA32) && defined(_MSC_VER)
-static int
+
+int
 sigill_check(void (*func)())
 {
+#if defined(_MSC_VER)
 	_try {
 		func();
-	} _except(EXCEPTION_EXECUTE_HANDLER) {
+	}
+	_except(EXCEPTION_EXECUTE_HANDLER) {
 
 		if (_exception_code() == STATUS_ILLEGAL_INSTRUCTION)
-			return(1);
+			return 1;
 	}
-	return(0);
-}
-#elif defined(ARCH_IS_IA32) || defined(ARCH_IS_PPC)
-static int
-sigill_check(void (*func)())
-{
-    void *old_handler;
+	return 0;
+#else
+    void * old_handler;
     int jmpret;
 
-    /* Set our SIGILL handler */
-    old_handler = signal(SIGILL, sigill_handler);
 
-    /* Check for error */
-    if (old_handler == SIG_ERR) {
-        return(-1);
+    old_handler = signal(SIGILL, sigill_handler);
+    if (old_handler == SIG_ERR)
+    {
+        return -1;
     }
 
-    /* Save stack context, so if func triggers a SIGILL, we can still roll
-	 * back to a valid CPU state */
-	jmpret = setjmp(mark);
-
-	/* If setjmp returned directly, then its returned value is 0, and we still
-	 * have to test the passed func. Otherwise it means the stack context has
-	 * been restored by a longjmp() call, which in our case happens only in the
-	 * signal handler */
-    if (jmpret == 0) {
+    jmpret = setjmp(mark);
+    if (jmpret == 0)
+    {
         func();
     }
 
-    /* Restore old signal handler */
     signal(SIGILL, old_handler);
 
-    return(jmpret);
+    return jmpret;
+#endif
 }
 #endif
 
@@ -141,8 +134,9 @@ detect_cpu_flags()
 #endif
 
 #if defined(ARCH_IS_PPC)
-	if (!sigill_check(altivec_trigger))
-		cpu_flags |= XVID_CPU_ALTIVEC;
+#if defined(ARCH_IS_PPC_ALTIVEC)
+	cpu_flags |= XVID_CPU_ALTIVEC;
+#endif
 #endif
 
 	return cpu_flags;
@@ -221,11 +215,6 @@ int xvid_gbl_init(xvid_gbl_init_t * init)
 	interpolate8x8_halfpel_v  = interpolate8x8_halfpel_v_c;
 	interpolate8x8_halfpel_hv = interpolate8x8_halfpel_hv_c;
 
-	interpolate8x8_halfpel_add = interpolate8x8_halfpel_add_c;
-	interpolate8x8_halfpel_h_add = interpolate8x8_halfpel_h_add_c;
-	interpolate8x8_halfpel_v_add = interpolate8x8_halfpel_v_add_c;
-	interpolate8x8_halfpel_hv_add = interpolate8x8_halfpel_hv_add_c;
-
 	interpolate16x16_lowpass_h = interpolate16x16_lowpass_h_c;
 	interpolate16x16_lowpass_v = interpolate16x16_lowpass_v_c;
 	interpolate16x16_lowpass_hv = interpolate16x16_lowpass_hv_c;
@@ -240,8 +229,13 @@ int xvid_gbl_init(xvid_gbl_init_t * init)
 	interpolate8x8_avg2 = interpolate8x8_avg2_c;
 	interpolate8x8_avg4 = interpolate8x8_avg4_c;
 
-	/* postprocessing */
-	image_brightness = image_brightness_c;
+	/* reduced resolution */
+	copy_upsampled_8x8_16to8 = xvid_Copy_Upsampled_8x8_16To8_C;
+	add_upsampled_8x8_16to8 = xvid_Add_Upsampled_8x8_16To8_C;
+	vfilter_31 = xvid_VFilter_31_C;
+	hfilter_31 = xvid_HFilter_31_C;
+	filter_18x18_to_8x8 = xvid_Filter_18x18_To_8x8_C;
+	filter_diff_18x18_to_8x8 = xvid_Filter_Diff_18x18_To_8x8_C;
 
 	/* Initialize internal colorspace transformation tables */
 	colorspace_init();
@@ -298,9 +292,13 @@ int xvid_gbl_init(xvid_gbl_init_t * init)
 	dev16      = dev16_c;
 	sad16v	   = sad16v_c;
 	sse8_16bit = sse8_16bit_c;
-	sse8_8bit  = sse8_8bit_c;
 
 #if defined(ARCH_IS_IA32)
+
+	if ((cpu_flags & XVID_CPU_ASM))	{
+		vfilter_31 = xvid_VFilter_31_x86;
+		hfilter_31 = xvid_HFilter_31_x86;
+	}
 
 	if ((cpu_flags & XVID_CPU_MMX) || (cpu_flags & XVID_CPU_MMXEXT) ||
 		(cpu_flags & XVID_CPU_3DNOW) || (cpu_flags & XVID_CPU_3DNOWEXT) ||
@@ -348,19 +346,18 @@ int xvid_gbl_init(xvid_gbl_init_t * init)
 		interpolate8x8_halfpel_v  = interpolate8x8_halfpel_v_mmx;
 		interpolate8x8_halfpel_hv = interpolate8x8_halfpel_hv_mmx;
 
-		interpolate8x8_halfpel_add = interpolate8x8_halfpel_add_mmx;
-		interpolate8x8_halfpel_h_add = interpolate8x8_halfpel_h_add_mmx;
-		interpolate8x8_halfpel_v_add = interpolate8x8_halfpel_v_add_mmx;
-		interpolate8x8_halfpel_hv_add = interpolate8x8_halfpel_hv_add_mmx;
-
 		interpolate8x8_6tap_lowpass_h = interpolate8x8_6tap_lowpass_h_mmx;
 		interpolate8x8_6tap_lowpass_v = interpolate8x8_6tap_lowpass_v_mmx;
 
 		interpolate8x8_avg2 = interpolate8x8_avg2_mmx;
 		interpolate8x8_avg4 = interpolate8x8_avg4_mmx;
 
-		/* postprocessing */
-		image_brightness = image_brightness_mmx;
+		/* reduced resolution */
+		copy_upsampled_8x8_16to8 = xvid_Copy_Upsampled_8x8_16To8_mmx;
+		add_upsampled_8x8_16to8 = xvid_Add_Upsampled_8x8_16To8_mmx;
+		hfilter_31 = xvid_HFilter_31_mmx;
+		filter_18x18_to_8x8 = xvid_Filter_18x18_To_8x8_mmx;
+		filter_diff_18x18_to_8x8 = xvid_Filter_Diff_18x18_To_8x8_mmx;
 
 		/* image input xxx_to_yv12 related functions */
 		yv12_to_yv12  = yv12_to_yv12_mmx;
@@ -379,15 +376,14 @@ int xvid_gbl_init(xvid_gbl_init_t * init)
 		yv12_to_uyvyi = yv12_to_uyvyi_mmx;
 
 		/* Motion estimation related functions */
-		calc_cbp   = calc_cbp_mmx;
-		sad16      = sad16_mmx;
-		sad8       = sad8_mmx;
-		sad16bi    = sad16bi_mmx;
-		sad8bi     = sad8bi_mmx;
-		dev16      = dev16_mmx;
-		sad16v	   = sad16v_mmx;
+		calc_cbp = calc_cbp_mmx;
+		sad16    = sad16_mmx;
+		sad8     = sad8_mmx;
+		sad16bi = sad16bi_mmx;
+		sad8bi  = sad8bi_mmx;
+		dev16    = dev16_mmx;
+		sad16v	 = sad16v_mmx;
 		sse8_16bit = sse8_16bit_mmx;
-		sse8_8bit  = sse8_8bit_mmx;
 	}
 
 	/* these 3dnow functions are faster than mmx, but slower than xmm. */
@@ -414,11 +410,10 @@ int xvid_gbl_init(xvid_gbl_init_t * init)
 		interpolate8x8_halfpel_h  = interpolate8x8_halfpel_h_xmm;
 		interpolate8x8_halfpel_v  = interpolate8x8_halfpel_v_xmm;
 		interpolate8x8_halfpel_hv = interpolate8x8_halfpel_hv_xmm;
-		
-		interpolate8x8_halfpel_add = interpolate8x8_halfpel_add_xmm;
-		interpolate8x8_halfpel_h_add = interpolate8x8_halfpel_h_add_xmm;
-		interpolate8x8_halfpel_v_add = interpolate8x8_halfpel_v_add_xmm;
-		interpolate8x8_halfpel_hv_add = interpolate8x8_halfpel_hv_add_xmm;
+
+		/* reduced resolution */
+		copy_upsampled_8x8_16to8 = xvid_Copy_Upsampled_8x8_16To8_xmm;
+		add_upsampled_8x8_16to8 = xvid_Add_Upsampled_8x8_16To8_xmm;
 
 		/* Quantization */
 		quant_mpeg_intra = quant_mpeg_intra_xmm;
@@ -510,9 +505,6 @@ int xvid_gbl_init(xvid_gbl_init_t * init)
 		/* DCT operators
 		 * no iDCT because it's not "Walken matching" */
 		fdct = fdct_sse2_skal;
-
-		/* postprocessing */
-		image_brightness = image_brightness_sse2;
 	}
 #endif /* ARCH_IS_IA32 */
 
@@ -543,69 +535,28 @@ int xvid_gbl_init(xvid_gbl_init_t * init)
 #endif
 
 #if defined(ARCH_IS_PPC)
-	if ((cpu_flags & XVID_CPU_ALTIVEC)) {
-          /* sad operators */
-		  sad16 = sad16_altivec_c;
-		  sad16bi = sad16bi_altivec_c;
-		  sad8 = sad8_altivec_c;
-		  dev16 = dev16_altivec_c;
-          
-          sse8_16bit = sse8_16bit_altivec_c;
-          
-          /* mem transfer */
-          transfer_8to16copy = transfer_8to16copy_altivec_c;
-          transfer_16to8copy = transfer_16to8copy_altivec_c;
-          transfer_8to16sub = transfer_8to16sub_altivec_c;
-          transfer_8to16subro = transfer_8to16subro_altivec_c;
-          transfer_8to16sub2 = transfer_8to16sub2_altivec_c;
-          transfer_16to8add = transfer_16to8add_altivec_c;
-          transfer8x8_copy = transfer8x8_copy_altivec_c;
-           
-          /* Inverse DCT */
-          idct = idct_altivec_c;
-          
-          /* Interpolation */
-          interpolate8x8_halfpel_h = interpolate8x8_halfpel_h_altivec_c;
-          interpolate8x8_halfpel_v = interpolate8x8_halfpel_v_altivec_c;
-          interpolate8x8_halfpel_hv = interpolate8x8_halfpel_hv_altivec_c;
-		  
-          interpolate8x8_avg2 = interpolate8x8_avg2_altivec_c;
-          interpolate8x8_avg4 = interpolate8x8_avg4_altivec_c;
-		  
-		  interpolate8x8_halfpel_add = interpolate8x8_halfpel_add_altivec_c;
-		  interpolate8x8_halfpel_h_add = interpolate8x8_halfpel_h_add_altivec_c;
-		  interpolate8x8_halfpel_v_add = interpolate8x8_halfpel_v_add_altivec_c;
-		  interpolate8x8_halfpel_hv_add = interpolate8x8_halfpel_hv_add_altivec_c;
-          
-          /* Colorspace conversion */
-          bgra_to_yv12 = bgra_to_yv12_altivec_c;
-          abgr_to_yv12 = abgr_to_yv12_altivec_c;
-          rgba_to_yv12 = rgba_to_yv12_altivec_c;
-          argb_to_yv12 = argb_to_yv12_altivec_c;
-          
-          yuyv_to_yv12 = yuyv_to_yv12_altivec_c;
-          uyvy_to_yv12 = uyvy_to_yv12_altivec_c;
-          
-          yv12_to_yuyv = yv12_to_yuyv_altivec_c;
-          yv12_to_uyvy = yv12_to_uyvy_altivec_c;
-          
-          /* Quantization */
-          quant_h263_intra = quant_h263_intra_altivec_c;
-          quant_h263_inter = quant_h263_inter_altivec_c;
-          dequant_h263_intra = dequant_h263_intra_altivec_c;
-          dequant_h263_inter = dequant_h263_inter_altivec_c;
-		  
-		  /* Qpel stuff */
-		  xvid_QP_Funcs = &xvid_QP_Funcs_Altivec_C;
-		  xvid_QP_Add_Funcs = &xvid_QP_Add_Funcs_Altivec_C;
-        }
+	if ((cpu_flags & XVID_CPU_ASM))
+	{
+		calc_cbp = calc_cbp_ppc;
+	}
+
+	if ((cpu_flags & XVID_CPU_ALTIVEC))
+	{
+		calc_cbp = calc_cbp_altivec;
+		fdct = fdct_altivec;
+		idct = idct_altivec;
+		sadInit = sadInit_altivec;
+		sad16 = sad16_altivec;
+		sad8 = sad8_altivec;
+		dev16 = dev16_altivec;
+	}
 #endif
 
 #if defined(_DEBUG)
     xvid_debug = init->debug;
 #endif
 
-    return(0);
+    return 0;
 }
 
 
@@ -616,7 +567,7 @@ xvid_gbl_info(xvid_gbl_info_t * info)
 		return XVID_ERR_VERSION;
 
 	info->actual_version = XVID_VERSION;
-	info->build = "xvid-1.1-cvshead";
+	info->build = "xvid-1.0.3";
 	info->cpu_flags = detect_cpu_flags();
 
 #if defined(_SMP) && defined(WIN32)

@@ -3,7 +3,7 @@
  * XVID MPEG-4 VIDEO CODEC
  * - XviD Main header file -
  *
- *  Copyright(C) 2001-2004 Peter Ross <pross@xvid.org>
+ *  Copyright(C) 2001-2003 Peter Ross <pross@xvid.org>
  *
  *  This program is free software ; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid.h,v 1.46 2004-08-31 22:23:38 edgomez Exp $
+ * $Id: xvid.h,v 1.33.2.9 2004-12-19 12:04:27 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -57,10 +57,8 @@ extern "C" {
 #define XVID_API_MAJOR(a)        (((a)>>16) & 0xff)
 #define XVID_API_MINOR(a)        (((a)>> 0) & 0xff)
 
-#define XVID_VERSION             XVID_MAKE_VERSION(1,1,-127)
-#define XVID_API                 XVID_MAKE_API(4, 1)
-
-#define XVID_UNSTABLE
+#define XVID_VERSION             XVID_MAKE_VERSION(1,0,3)
+#define XVID_API                 XVID_MAKE_API(4, 0)
 
 /* Bitstream Version
  * this will be writen into the bitstream to allow easy detection of xvid
@@ -73,7 +71,7 @@ extern "C" {
  * doesnt hurt but not increasing it could cause difficulty for decoders in the
  * future
  */
-#define XVID_BS_VERSION 36
+#define XVID_BS_VERSION 37
 
 /*****************************************************************************
  * error codes
@@ -250,12 +248,6 @@ typedef struct {
 #define XVID_DEBLOCKY      (1<<2) /* perform luma deblocking */
 #define XVID_DEBLOCKUV     (1<<3) /* perform chroma deblocking */
 #define XVID_FILMEFFECT    (1<<4) /* adds film grain */
-#define XVID_DERINGUV      (1<<5) /* perform chroma deringing, requires deblocking to work */
-#define XVID_DERINGY       (1<<6) /* perform luma deringing, requires deblocking to work */
-
-#define XVID_DEC_FAST      (1<<29) /* disable postprocessing to decrease cpu usage *todo* */
-#define XVID_DEC_DROP      (1<<30) /* drop bframes to decrease cpu usage *todo* */
-#define XVID_DEC_PREROLL   (1<<31) /* decode as fast as you can, don't even show output *todo* */
 
 typedef struct {
 	int version;
@@ -263,8 +255,6 @@ typedef struct {
 	void *bitstream;     /* [in]     bitstream (read from)*/
 	int length;          /* [in]     bitstream length */
 	xvid_image_t output; /* [in]     output image (written to) */
-/* ------- v1.1.x ------- */
-	int brightness;		 /* [in]	 brightness offset (0=none) */
 } xvid_dec_frame_t;
 
 
@@ -508,7 +498,7 @@ typedef struct {
 typedef struct {
 	int version;
 
-	int bitrate;                  /* [in] target bitrate (bits per second) */
+	int bitrate;                  /* [in] bits per second */
 	char * filename;              /* [in] first pass stats filename */
 
 	int keyframe_boost;           /* [in] keyframe boost percentage: [0..100] */
@@ -525,13 +515,6 @@ typedef struct {
 								   *      0 for 1<distance<kfthreshold */
 
 	int container_frame_overhead; /* [in] How many bytes the controller has to compensate per frame due to container format overhead */
-
-/* ------- v1.1.x ------- */
-	int vbv_size;                 /* [in] buffer size (bits) */
-	int vbv_initial;              /* [in] initial buffer occupancy (bits) */
-	int vbv_maxrate;              /* [in] max processing bitrate (bits per second) */
-	int vbv_peakrate;             /* [in:opt] max average bitrate over 3 seconds (bits per second) */
-
 }xvid_plugin_2pass2_t;
 
 /*****************************************************************************
@@ -628,7 +611,6 @@ extern int xvid_encore(void *handle, int opt, void *param1, void *param2);
 #define XVID_VOP_HQACPRED             (1<< 7) /* high quality ac prediction */
 #define XVID_VOP_MODEDECISION_RD      (1<< 8) /* enable DCT-ME and use it for mode decision */
 #define XVID_VOP_FAST_MODEDECISION_RD (1<<12) /* use simplified R-D mode decision */
-#define XVID_VOP_RD_BVOP              (1<<13) /* enable rate-distortion mode decision in b-frames */
 
 /* Only valid for vol_flags|=XVID_VOL_INTERLACING */
 #define XVID_VOP_TOPFIELDFIRST        (1<< 9) /* set top-field-first flag  */

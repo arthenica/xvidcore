@@ -19,7 +19,7 @@
 ; *  along with this program; if not, write to the Free Software
 ; *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 ; *
-; * $Id: reduced_mmx.asm,v 1.6 2004-08-29 10:02:38 edgomez Exp $
+; * $Id: reduced_mmx.asm,v 1.3.2.1 2004-07-24 11:38:12 edgomez Exp $
 ; *
 ; *************************************************************************/
 
@@ -27,19 +27,10 @@ BITS 32
 
 %macro cglobal 1
 	%ifdef PREFIX
-		%ifdef MARK_FUNCS
-			global _%1:function %1.endfunc-%1
-			%define %1 _%1:function %1.endfunc-%1
-		%else
-			global _%1
-			%define %1 _%1
-		%endif
+		global _%1
+		%define %1 _%1
 	%else
-		%ifdef MARK_FUNCS
-			global %1:function %1.endfunc-%1
-		%else
-			global %1
-		%endif
+		global %1
 	%endif
 %endmacro
 
@@ -271,7 +262,6 @@ xvid_Copy_Upsampled_8x8_16To8_mmx:  ; 344c
   STORE_1 mm2, mm3
 
   ret
-.endfunc
 
 ;===========================================================================
 ;
@@ -466,7 +456,6 @@ xvid_Add_Upsampled_8x8_16To8_mmx:  ; 579c
   STORE_ADD_1 mm2, mm3
 
   ret
-.endfunc
 
 ;===========================================================================
 ;
@@ -598,7 +587,6 @@ xvid_Copy_Upsampled_8x8_16To8_xmm:  ; 315c
   STORE_1 mm2, mm3
 
   ret
-.endfunc
 
 ;===========================================================================
 ;
@@ -707,7 +695,6 @@ xvid_Add_Upsampled_8x8_16To8_xmm:  ; 549c
   STORE_ADD_1 mm2, mm3
 
   ret
-.endfunc
 
 
 ;===========================================================================
@@ -764,7 +751,6 @@ xvid_HFilter_31_mmx:
   pop edi
   pop esi
   ret
-.endfunc
 
   ; mmx is of no use here. Better use plain ASM. Moreover,
   ; this is for the fun of ASM coding, coz' every modern compiler can
@@ -804,7 +790,6 @@ xvid_VFilter_31_x86:
   pop edi
   pop esi
   ret
-.endfunc
 
   ; this one's just a little faster than gcc's code. Very little.
 
@@ -841,7 +826,6 @@ xvid_HFilter_31_x86:
   pop edi
   pop esi
   ret
-.endfunc
 
 ;//////////////////////////////////////////////////////////////////////
 ;// 16b downsampling 16x16 -> 8x8
@@ -931,7 +915,6 @@ xvid_Filter_18x18_To_8x8_mmx:  ; 283c   (~4.4c per output pixel)
   COPY_TWO_LINES_1331 ecx + 6*16 +8
 
   ret
-.endfunc
 
 ;===========================================================================
 ;
@@ -996,7 +979,6 @@ xvid_Filter_Diff_18x18_To_8x8_mmx:  ; 302c
   DIFF_TWO_LINES_1331 ecx + 6*16 +8
 
   ret
-.endfunc
 
 ;//////////////////////////////////////////////////////////////////////
 

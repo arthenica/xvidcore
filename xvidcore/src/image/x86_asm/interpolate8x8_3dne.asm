@@ -28,19 +28,10 @@ BITS 32
 
 %macro cglobal 1
 	%ifdef PREFIX
-		%ifdef MARK_FUNCS
-			global _%1:function %1.endfunc-%1
-			%define %1 _%1:function %1.endfunc-%1
-		%else
-			global _%1
-			%define %1 _%1
-		%endif
+		global _%1
+		%define %1 _%1
 	%else
-		%ifdef MARK_FUNCS
-			global %1:function %1.endfunc-%1
-		%else
-			global %1
-		%endif
+		global %1
 	%endif
 %endmacro
 
@@ -154,7 +145,6 @@ interpolate8x8_halfpel_h_3dne:
   lea ecx,[ecx+2*edx]
   COPY_H_SSE_RND1
   ret
-.endfunc
 
 ;-----------------------------------------------------------------------------
 ;
@@ -278,7 +268,6 @@ ALIGN 8
   movq [ecx], mm4
   movq [ecx+edx], mm5
   ret
-.endfunc
 
 ;-----------------------------------------------------------------------------
 ;
@@ -410,5 +399,3 @@ ALIGN 16
   lea ecx,[ecx+2*edx]
   COPY_HV_SSE_RND1
   ret
-.endfunc
-

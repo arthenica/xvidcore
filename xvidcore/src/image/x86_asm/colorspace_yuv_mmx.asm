@@ -19,27 +19,18 @@
 ; *  along with this program; if not, write to the Free Software
 ; *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 ; *
-; * $Id: colorspace_yuv_mmx.asm,v 1.5 2004-08-29 10:02:38 edgomez Exp $
+; * $Id: colorspace_yuv_mmx.asm,v 1.3 2004-03-22 22:36:24 edgomez Exp $
 ; *
 ; ***************************************************************************/
 
 BITS 32
 
 %macro cglobal 1
-	%ifdef PREFIX
-		%ifdef MARK_FUNCS
-			global _%1:function %1.endfunc-%1
-			%define %1 _%1:function %1.endfunc-%1
-		%else
-			global _%1
-			%define %1 _%1
-		%endif
+%ifdef PREFIX
+	global _%1
+		%define %1 _%1
 	%else
-		%ifdef MARK_FUNCS
-			global %1:function %1.endfunc-%1
-		%else
-			global %1
-		%endif
+		global %1
 	%endif
 %endmacro
 
@@ -267,7 +258,6 @@ NAME:
   pop ebx
 
   ret
-.endfunc
 %endmacro
 
 ;=============================================================================

@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: estimation.h,v 1.11 2004-12-17 15:42:35 syskin Exp $
+ * $Id: estimation.h,v 1.2 2004-03-22 22:36:24 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -30,6 +30,7 @@
 
 #include "../portab.h"
 #include "../global.h"
+#include "../image/reduced.h"
 
 /* hard coded motion search parameters */
 
@@ -46,7 +47,7 @@
 
 #define BITS_MULT				16
 
-#define INITIAL_SKIP_THRESH		6
+#define INITIAL_SKIP_THRESH		10
 #define FINAL_SKIP_THRESH		50
 #define MAX_SAD00_FOR_SKIP		20
 #define MAX_CHROMA_SAD_FOR_SKIP	22
@@ -59,6 +60,8 @@ extern const int xvid_me_lambda_vec16[32];
 #define CHECK_CANDIDATE(X,Y,D) { \
 	CheckCandidate((X),(Y), data, (D) ); }
 
+#define RRV_MV_SCALEDOWN(a)	( (a)>=0 ? (a+1)/2 : (a-1)/2 )
+
 /* fast ((A)/2)*2 */
 #define EVEN(A)		(((A)<0?(A)+1:(A)) & ~1)
 
@@ -68,8 +71,6 @@ static const VECTOR zeroMV = { 0, 0 };
 
 typedef struct
 {
-	int max_dx, min_dx, max_dy, min_dy; /* maximum search range */
-
 	/* data modified by CheckCandidates */
 	int32_t iMinSAD[5];			/* smallest SADs found so far */
 	VECTOR currentMV[5];		/* best vectors found so far */
@@ -77,8 +78,11 @@ typedef struct
 	int temp[4];				/* temporary space */
 	unsigned int dir;			/* 'direction', set when better vector is found */
 	int chromaX, chromaY, chromaSAD; /* info to make ChromaSAD faster */
+	VECTOR currentQMV2;			/* extra vector for SubpelRefine_fast */
+	int32_t iMinSAD2;			/* extra SAD value for SubpelRefine_fast */
 
 	/* general fields */
+	int max_dx, min_dx, max_dy, min_dy; /* maximum range */
 	uint32_t rounding;			/* rounding type in use */
 	VECTOR predMV;				/* vector which predicts current vector */
 	const uint8_t * RefP[6];	/* reference pictures - N, V, H, HV, cU, cV */
@@ -90,31 +94,29 @@ typedef struct
 	uint32_t lambda8;			/* as above - for inter4v mode */
 	uint32_t iEdgedWidth;		/* picture's stride */
 	uint32_t iFcode;			/* current fcode */
-
+	
 	int qpel;					/* if we're coding in qpel mode */
 	int qpel_precision;			/* if X and Y are in qpel precision (refinement probably) */
 	int chroma;					/* should we include chroma SAD? */
+	int rrv;					/* are we using reduced resolution? */
 
 	/* fields for interpolate and direct modes */
 	const uint8_t * b_RefP[6];	/* backward reference pictures - N, V, H, HV, cU, cV */
-	VECTOR bpredMV;				/* backward prediction - used in Interpolate-mode search only */
-	uint32_t bFcode;			/* backward fcode - used in Interpolate-mode search only */
-	int b_chromaX, b_chromaY;
+	VECTOR bpredMV;				/* backward prediction - used interpolate mode only */
+	uint32_t bFcode;			/* backward fcode - used as above */
 
 	/* fields for direct mode */
 	VECTOR directmvF[4];		/* scaled reference vectors */
-	VECTOR directmvB[4];
+	VECTOR directmvB[4];		/* as above */
 	const VECTOR * referencemv; /* pointer to not-scaled reference vectors */
 
 	/* BITS/R-D stuff */
 	int16_t * dctSpace;			/* temporary space for dct */
 	uint32_t iQuant;			/* current quant */
 	uint32_t quant_type;		/* current quant type */
-	unsigned int cbp[2];		/* CBP of the best vector found so far + cbp for inter4v search */
+	unsigned int cbp[2];					/* CBP of the best vector found so far + cbp for inter4v search */
 	const uint16_t * scan_table; /* current scan table */
 	const uint16_t * mpeg_quant_matrices;			/* current MPEG quantization matrices */
-	int lambda[6];				/* R-D lambdas for all 6 blocks */
-	unsigned int quant_sq;		/* quant squared - saves many multiplications in VHQ */
 
 } SearchData;
 
@@ -138,7 +140,7 @@ xvid_me_ChromaSAD(const int dx, const int dy, SearchData * const data);
 int
 xvid_me_SkipDecisionP(const IMAGE * current, const IMAGE * reference,
 					const int x, const int y,
-					const uint32_t stride, const uint32_t iQuant);
+					const uint32_t stride, const uint32_t iQuant, int rrv);
 
 #define iDiamondSize 2
 typedef void
@@ -148,10 +150,10 @@ MainSearchFunc(int x, int y, SearchData * const Data,
 MainSearchFunc xvid_me_DiamondSearch, xvid_me_AdvDiamondSearch, xvid_me_SquareSearch;
 
 void
-xvid_me_SubpelRefine(VECTOR centerMV, SearchData * const data, CheckFunc * const CheckCandidate, int dir);
+xvid_me_SubpelRefine(SearchData * const data, CheckFunc * const CheckCandidate);
 
-void 
-FullRefine_Fast(SearchData * data, CheckFunc * CheckCandidate, int direction);
+void
+SubpelRefine_Fast(SearchData * data, CheckFunc * CheckCandidate);
 
 void
 xvid_me_ModeDecision_RD(SearchData * const Data,
@@ -181,21 +183,5 @@ xvid_me_ModeDecision_Fast(SearchData * const Data,
 		const IMAGE * const vGMC,
 		const int coding_type);
 
-void 
-ModeDecision_BVOP_RD(SearchData * const Data_d,
-					 SearchData * const Data_b,
-					 SearchData * const Data_f,
-					 SearchData * const Data_i,
-					 MACROBLOCK * const pMB,
-					 const MACROBLOCK * const b_mb,
-					 VECTOR * f_predMV,
-					 VECTOR * b_predMV,
-					 const uint32_t MotionFlags,
-					 const MBParam * const pParam,
-					 int x, int y,
-					 int best_sad);
-
-unsigned int
-getMinFcode(const int MVmax);
 
 #endif							/* _ESTIMATION_H_ */

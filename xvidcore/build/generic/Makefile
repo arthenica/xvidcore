@@ -55,7 +55,6 @@ RM = rm -rf
 OBJECTS  = $(GENERIC_OBJECTS)
 OBJECTS += $(ASSEMBLY_OBJECTS)
 OBJECTS += $(DCT_IA64_OBJECTS)
-OBJECTS += $(PPC_ALTIVEC_OBJECTS)
 
 # The VPATH mechanism could use a "per target" build directory
 # To keep it simple at the moment, the directory is fixed to "build"
@@ -137,15 +136,15 @@ $(SHARED_LIB): $(BUILD_DIR) $(OBJECTS)
 
 install: $(BUILD_DIR)/$(STATIC_LIB) $(BUILD_DIR)/$(SHARED_LIB)
 	@echo "  D: $(libdir)"
-	@$(INSTALL) -d $(DESTDIR)$(libdir)
+	@$(INSTALL) -d $(libdir)
 	@echo "  I: $(libdir)/$(SHARED_LIB)"
-	@$(INSTALL) -m 755 $(BUILD_DIR)/$(SHARED_LIB) $(DESTDIR)$(libdir)/$(SHARED_LIB)
+	@$(INSTALL) -m 755 $(BUILD_DIR)/$(SHARED_LIB) $(libdir)/$(SHARED_LIB)
 	@echo "  I: $(libdir)/$(STATIC_LIB)"
-	@$(INSTALL) -m 755 $(BUILD_DIR)/$(STATIC_LIB) $(DESTDIR)$(libdir)/$(STATIC_LIB)
+	@$(INSTALL) -m 755 $(BUILD_DIR)/$(STATIC_LIB) $(libdir)/$(STATIC_LIB)
 	@echo "  D: $(includedir)"
-	@$(INSTALL) -d $(DESTDIR)$(includedir)
+	@$(INSTALL) -d $(includedir)
 	@echo "  I: $(includedir)/xvid.h"
-	@$(INSTALL) -m 644 $(SRC_DIR)/xvid.h $(DESTDIR)$(includedir)/xvid.h
+	@$(INSTALL) -m 644 $(SRC_DIR)/xvid.h $(includedir)/xvid.h
 
 #-----------------------------------------------------------------------------
 # Platorm specific file -- dumb rules for people executing make before

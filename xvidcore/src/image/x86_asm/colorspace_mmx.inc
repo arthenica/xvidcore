@@ -183,7 +183,6 @@ NAME:
 %undef fixed_width
 %undef tmp_height
         ret
-.endfunc
 %undef NAME
 %undef STACK
 %undef BYTES

@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: estimation_gmc.c,v 1.5 2004-12-05 04:53:01 syskin Exp $
+ * $Id: estimation_gmc.c,v 1.2 2004-03-22 22:36:24 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -78,7 +78,7 @@ GMEanalyzeMB (	const uint8_t * const pCur,
 	Data->predMV = get_pmv2(pMBs, pParam->mb_width, 0, x, y, 0);
 
 	get_range(&Data->min_dx, &Data->max_dx, &Data->min_dy, &Data->max_dy, x, y, 4,
-				pParam->width, pParam->height, 16, 1);
+				pParam->width, pParam->height, 16, 1, 0);
 
 	Data->Cur = pCur + 16*(x + y * pParam->edged_width);
 	Data->RefP[0] = pRef + 16*(x + y * pParam->edged_width);
@@ -94,7 +94,7 @@ GMEanalyzeMB (	const uint8_t * const pCur,
 
 	xvid_me_DiamondSearch(Data->currentMV[0].x, Data->currentMV[0].y, Data, 255, CheckCandidate16I);
 
-	xvid_me_SubpelRefine(Data->currentMV[0], Data, CheckCandidate16I, 0);
+	xvid_me_SubpelRefine(Data, CheckCandidate16I);
 
 
 	/* for QPel halfpel positions are worse than in halfpel mode :( */
@@ -111,7 +111,7 @@ GMEanalyzeMB (	const uint8_t * const pCur,
 	pMB->mvs[0] = pMB->mvs[1] = pMB->mvs[2] = pMB->mvs[3] = Data->currentMV[0];
 	pMB->sad16 = Data->iMinSAD[0];
 	pMB->mode = MODE_INTER;
-	pMB->sad16 += 10*d_mv_bits(pMB->mvs[0].x, pMB->mvs[0].y, Data->predMV, Data->iFcode, 0);
+	pMB->sad16 += 10*d_mv_bits(pMB->mvs[0].x, pMB->mvs[0].y, Data->predMV, Data->iFcode, 0, 0);
 	return;
 }
 

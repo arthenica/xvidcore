@@ -20,7 +20,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid_decraw.c,v 1.19 2004-09-04 14:16:24 edgomez Exp $
+ * $Id: xvid_decraw.c,v 1.10.2.6 2004-07-24 11:38:12 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -54,6 +54,9 @@
  *               Global vars in module and constants
  ****************************************************************************/
 
+/* max number of frames */
+#define ABS_MAXFRAMENR 9999
+
 #define USE_PNM 0
 #define USE_TGA 1
 
@@ -71,14 +74,12 @@ static void *dec_handle = NULL;
 
 #define BUFFER_SIZE (2*1024*1024)
 
-static const int display_buffer_bytes = 0;
-
 /*****************************************************************************
  *               Local prototypes
  ****************************************************************************/
 
 static double msecond();
-static int dec_init(int use_assembler, int debug_level);
+static int dec_init(int use_assembler);
 static int dec_main(unsigned char *istream,
 					unsigned char *ostream,
 					int istream_size,
@@ -110,7 +111,6 @@ int main(int argc, char *argv[])
 	unsigned char *mp4_ptr    = NULL;
 	unsigned char *out_buffer = NULL;
 	int useful_bytes;
-	int chunk;
 	xvid_dec_stats_t xvid_dec_stats;
 	
 	double totaldectime;
@@ -119,7 +119,6 @@ int main(int argc, char *argv[])
 	int status;
   
 	int use_assembler = 0;
-	int debug_level = 0;
   
 	char filename[256];
   
@@ -138,11 +137,6 @@ int main(int argc, char *argv[])
  
 		if (strcmp("-asm", argv[i]) == 0 ) {
 			use_assembler = 1;
-		} else if (strcmp("-debug", argv[i]) == 0 && i < argc - 1 ) {
-			i++;
-			if (sscanf(argv[i], "0x%x", &debug_level) != 1) {
-				debug_level = atoi(argv[i]);
-			}
 		} else if (strcmp("-d", argv[i]) == 0) {
 			ARG_SAVEDECOUTPUT = 1;
 		} else if (strcmp("-i", argv[i]) == 0 && i < argc - 1 ) {
@@ -225,7 +219,7 @@ int main(int argc, char *argv[])
  *        XviD PART  Start
  ****************************************************************************/
 
-	status = dec_init(use_assembler, debug_level);
+	status = dec_init(use_assembler);
 	if (status) {
 		fprintf(stderr,
 				"Decore INIT problem, return value %d\n", status);
@@ -244,8 +238,7 @@ int main(int argc, char *argv[])
 	totalsize = 0;
 	filenr = 0;
 	mp4_ptr = mp4_buffer;
-	chunk = 0;
-	
+
 	do {
 		int used_bytes = 0;
 		double dectime;
@@ -303,22 +296,6 @@ int main(int argc, char *argv[])
 
 					fprintf(stderr, "Resized frame buffer to %dx%d\n", XDIM, YDIM);
 				}
-
-				/* Save individual mpeg4 stream if required */
-				if(ARG_SAVEMPEGSTREAM) {
-					FILE *filehandle = NULL;
-
-					sprintf(filename, "%svolhdr.m4v", filepath);
-					filehandle = fopen(filename, "wb");
-					if(!filehandle) {
-						fprintf(stderr,
-								"Error writing vol header mpeg4 stream to file %s\n",
-								filename);
-					} else {
-						fwrite(mp4_ptr, 1, used_bytes, filehandle);
-						fclose(filehandle);
-					}
-				}
 			}
 
 			/* Update buffer pointers */
@@ -330,10 +307,7 @@ int main(int argc, char *argv[])
 				totalsize += used_bytes;
 			}
 
-			if (display_buffer_bytes) {
-				printf("Data chunk %d: %d bytes consumed, %d bytes in buffer\n", chunk++, used_bytes, useful_bytes);
-			}
-		} while (xvid_dec_stats.type <= 0 && useful_bytes > 0);
+		}while(xvid_dec_stats.type <= 0 && useful_bytes > 0);
 
 		/* Check if there is a negative number of useful bytes left in buffer
 		 * This means we went too far */
@@ -344,11 +318,9 @@ int main(int argc, char *argv[])
 		totaldectime += dectime;
 
 			
-		if (!display_buffer_bytes) {
-			printf("Frame %5d: type = %s, dectime(ms) =%6.1f, length(bytes) =%7d\n",
-					filenr, type2str(xvid_dec_stats.type), dectime, used_bytes);
-		}
-
+        printf("Frame %5d: type = %s, dectime(ms) =%6.1f, length(bytes) =%7d\n",
+			   filenr, type2str(xvid_dec_stats.type), dectime, used_bytes);
+			
 		/* Save individual mpeg4 stream if required */
 		if(ARG_SAVEMPEGSTREAM) {
 			FILE *filehandle = NULL;
@@ -378,9 +350,7 @@ int main(int argc, char *argv[])
 
 		filenr++;
 
-	} while (useful_bytes>0 || !feof(in_file));
-
-	useful_bytes = 0; /* Empty buffer */
+	} while ( (status>=0) && (filenr<ABS_MAXFRAMENR));
 
 /*****************************************************************************
  *     Flush decoder buffers
@@ -396,10 +366,7 @@ int main(int argc, char *argv[])
 		    dectime = msecond();
 		    used_bytes = dec_main(NULL, out_buffer, -1, &xvid_dec_stats);
 		    dectime = msecond() - dectime;
-			if (display_buffer_bytes) {
-				printf("Data chunk %d: %d bytes consumed, %d bytes in buffer\n", chunk++, used_bytes, useful_bytes);
-			}
-        } while(used_bytes>=0 && xvid_dec_stats.type <= 0);
+        }while(used_bytes>=0 && xvid_dec_stats.type <= 0);
 
         if (used_bytes < 0) {   /* XVID_ERR_END */
             break;
@@ -409,11 +376,9 @@ int main(int argc, char *argv[])
 		totaldectime += dectime;
 
 		/* Prints some decoding stats */
-		if (!display_buffer_bytes) {
-			printf("Frame %5d: type = %s, dectime(ms) =%6.1f, length(bytes) =%7d\n",
-					filenr, type2str(xvid_dec_stats.type), dectime, used_bytes);
-		}
-
+        printf("Frame %5d: type = %s, dectime(ms) =%6.1f, length(bytes) =%7d\n",
+			   filenr, type2str(xvid_dec_stats.type), dectime, used_bytes);
+			
 		/* Save output frame if required */
 		if (ARG_SAVEDECOUTPUT) {
 			sprintf(filename, "%sdec%05d", filepath, filenr);
@@ -469,7 +434,6 @@ static void usage()
 	fprintf(stderr, "Usage : xvid_decraw [OPTIONS]\n");
 	fprintf(stderr, "Options :\n");
 	fprintf(stderr, " -asm           : use assembly optimizations (default=disabled)\n");
-	fprintf(stderr, " -debug         : debug level (debug=0)\n");
 	fprintf(stderr, " -i string      : input filename (default=stdin)\n");
 	fprintf(stderr, " -d             : save decoder output\n");
 	fprintf(stderr, " -c csp         : choose colorspace output (rgb16, rgb24, rgb32, yv12, i420)\n");
@@ -658,7 +622,7 @@ static int write_pnm(char *filename, unsigned char *image)
 
 /* init decoder before first run */
 static int
-dec_init(int use_assembler, int debug_level)
+dec_init(int use_assembler)
 {
 	int ret;
 
@@ -685,8 +649,6 @@ dec_init(int use_assembler, int debug_level)
 #endif
 	else
 		xvid_gbl_init.cpu_flags = XVID_CPU_FORCE;
-
-	xvid_gbl_init.debug = debug_level;
 
 	xvid_global(NULL, 0, &xvid_gbl_init, NULL);
 
@@ -722,10 +684,7 @@ dec_main(unsigned char *istream,
 	int ret;
 
 	xvid_dec_frame_t xvid_dec_frame;
-
-	/* Reset all structures */
 	memset(&xvid_dec_frame, 0, sizeof(xvid_dec_frame_t));
-	memset(xvid_dec_stats, 0, sizeof(xvid_dec_stats_t));
 
 	/* Set version */
 	xvid_dec_frame.version = XVID_VERSION;

@@ -20,7 +20,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: idct.c,v 1.8 2004-08-22 13:16:12 edgomez Exp $
+ * $Id: idct.c,v 1.7.2.1 2004-08-22 13:15:15 edgomez Exp $
  *
  ****************************************************************************/
 

@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: codec.h,v 1.5 2004-04-18 07:55:11 syskin Exp $
+ * $Id: codec.h,v 1.2.2.1 2004-03-31 19:35:31 edgomez Exp $
  *
  ****************************************************************************/
 #ifndef _CODEC_H_
@@ -95,6 +95,6 @@ LRESULT decompress_begin(CODEC *, BITMAPINFO *, BITMAPINFO *);
 LRESULT decompress_end(CODEC *);
 LRESULT decompress(CODEC *, ICDECOMPRESS *);
 
-extern int pp_brightness, pp_dy, pp_duv, pp_fe, pp_dry, pp_druv; /* decoder options */
+extern int pp_dy, pp_duv, pp_dr, pp_fe; /* decoder options */
 
 #endif /* _CODEC_H_ */

@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: estimation_pvop.c,v 1.11 2004-12-09 23:02:54 edgomez Exp $
+ * $Id: estimation_pvop.c,v 1.2.2.2 2004-05-27 14:19:04 syskin Exp $
  *
  ****************************************************************************/
 
@@ -63,49 +63,83 @@ static void
 CheckCandidate16(const int x, const int y, SearchData * const data, const unsigned int Direction)
 {
 	const uint8_t * Reference;
-	int32_t sad, xc, yc; uint32_t t;
-	VECTOR * current;
+	int32_t sad; uint32_t t;
 
 	if ( (x > data->max_dx) || (x < data->min_dx)
 		|| (y > data->max_dy) || (y < data->min_dy) ) return;
 
-	if (data->qpel_precision) { /* x and y are in 1/4 precision */
-		Reference = xvid_me_interpolate16x16qpel(x, y, 0, data);
-		current = data->currentQMV;
-		xc = x/2; yc = y/2;
-	} else {
-		Reference = GetReference(x, y, data);
-		current = data->currentMV;
-		xc = x; yc = y;
-	}
+	Reference = GetReference(x, y, data);
 
 	sad = sad16v(data->Cur, Reference, data->iEdgedWidth, data->temp);
-	t = d_mv_bits(x, y, data->predMV, data->iFcode, data->qpel^data->qpel_precision);
+	t = d_mv_bits(x, y, data->predMV, data->iFcode, data->qpel, 0);
 
 	sad += (data->lambda16 * t * sad)>>10;
 	data->temp[0] += (data->lambda8 * t * (data->temp[0] + NEIGH_8X8_BIAS))>>10;
 
 	if (data->chroma) {
 		if (sad >= data->iMinSAD[0]) goto no16;
-		sad += xvid_me_ChromaSAD((xc >> 1) + roundtab_79[xc & 0x3],
-								(yc >> 1) + roundtab_79[yc & 0x3], data);
+		sad += xvid_me_ChromaSAD((x >> 1) + roundtab_79[x & 0x3],
+								(y >> 1) + roundtab_79[y & 0x3], data);
 	}
 
 	if (sad < data->iMinSAD[0]) {
 		data->iMinSAD[0] = sad;
-		current[0].x = x; current[0].y = y;
+		data->currentMV[0].x = x; data->currentMV[0].y = y;
 		data->dir = Direction;
 	}
 
 no16:
 	if (data->temp[0] < data->iMinSAD[1]) {
-		data->iMinSAD[1] = data->temp[0]; current[1].x = x; current[1].y = y; }
+		data->iMinSAD[1] = data->temp[0]; data->currentMV[1].x = x; data->currentMV[1].y = y; }
 	if (data->temp[1] < data->iMinSAD[2]) {
-		data->iMinSAD[2] = data->temp[1]; current[2].x = x; current[2].y = y; }
+		data->iMinSAD[2] = data->temp[1]; data->currentMV[2].x = x; data->currentMV[2].y = y; }
 	if (data->temp[2] < data->iMinSAD[3]) {
-		data->iMinSAD[3] = data->temp[2]; current[3].x = x; current[3].y = y; }
+		data->iMinSAD[3] = data->temp[2]; data->currentMV[3].x = x; data->currentMV[3].y = y; }
 	if (data->temp[3] < data->iMinSAD[4]) {
-		data->iMinSAD[4] = data->temp[3]; current[4].x = x; current[4].y = y; }
+		data->iMinSAD[4] = data->temp[3]; data->currentMV[4].x = x; data->currentMV[4].y = y; }
+}
+
+static void
+CheckCandidate16_qpel(const int x, const int y, SearchData * const data, const unsigned int Direction)
+{
+	const uint8_t *Reference;
+	int32_t sad; uint32_t t;
+
+	if ( (x > data->max_dx) || (x < data->min_dx)
+		|| (y > data->max_dy) || (y < data->min_dy) ) return;
+
+	Reference = xvid_me_interpolate16x16qpel(x, y, 0, data);
+
+	sad = sad16v(data->Cur, Reference, data->iEdgedWidth, data->temp);
+	t = d_mv_bits(x, y, data->predMV, data->iFcode, 0, 0);
+
+	sad += (data->lambda16 * t * sad)>>10;
+	data->temp[0] += (data->lambda8 * t * (data->temp[0] + NEIGH_8X8_BIAS))>>10;
+
+	if (data->chroma && (sad < data->iMinSAD[0] || sad < data->iMinSAD2) )
+		sad += xvid_me_ChromaSAD(((x/2) >> 1) + roundtab_79[(x/2) & 0x3],
+								((y/2) >> 1) + roundtab_79[(y/2) & 0x3], data);
+
+	if (data->temp[0] < data->iMinSAD[1]) {
+		data->iMinSAD[1] = data->temp[0]; data->currentQMV[1].x = x; data->currentQMV[1].y = y; }
+	if (data->temp[1] < data->iMinSAD[2]) {
+		data->iMinSAD[2] = data->temp[1]; data->currentQMV[2].x = x; data->currentQMV[2].y = y; }
+	if (data->temp[2] < data->iMinSAD[3]) {
+		data->iMinSAD[3] = data->temp[2]; data->currentQMV[3].x = x; data->currentQMV[3].y = y; }
+	if (data->temp[3] < data->iMinSAD[4]) {
+		data->iMinSAD[4] = data->temp[3]; data->currentQMV[4].x = x; data->currentQMV[4].y = y; }
+
+	if (sad < data->iMinSAD[0]) {
+		data->iMinSAD2 = *(data->iMinSAD);
+		data->currentQMV2.x = data->currentQMV->x;
+		data->currentQMV2.y = data->currentQMV->y;
+
+		data->iMinSAD[0] = sad;
+		data->currentQMV[0].x = x; data->currentQMV[0].y = y;
+	} else if (sad < data->iMinSAD2) {
+		data->iMinSAD2 = sad;
+		data->currentQMV2.x = x; data->currentQMV2.y = y;
+	}
 }
 
 static void
@@ -127,7 +161,7 @@ CheckCandidate8(const int x, const int y, SearchData * const data, const unsigne
 	}
 
 	sad = sad8(data->Cur, Reference, data->iEdgedWidth);
-	t = d_mv_bits(x, y, data->predMV, data->iFcode, data->qpel^data->qpel_precision);
+	t = d_mv_bits(x, y, data->predMV, data->iFcode, data->qpel^data->qpel_precision, 0);
 
 	sad += (data->lambda8 * t * (sad+NEIGH_8X8_BIAS))>>10;
 
@@ -138,19 +172,98 @@ CheckCandidate8(const int x, const int y, SearchData * const data, const unsigne
 	}
 }
 
+static void
+CheckCandidate8_qpel(const int x, const int y, SearchData * const data, const unsigned int Direction)
+{
+	int32_t sad; uint32_t t;
+	const uint8_t * Reference;
+	VECTOR * current;
+
+	if ( (x > data->max_dx) || (x < data->min_dx)
+		|| (y > data->max_dy) || (y < data->min_dy) ) return;
+
+	/* x and y are in 1/4 precision */
+	Reference = xvid_me_interpolate8x8qpel(x, y, 0, 0, data);
+	current = data->currentQMV;
+
+	sad = sad8(data->Cur, Reference, data->iEdgedWidth);
+	t = d_mv_bits(x, y, data->predMV, data->iFcode, data->qpel^data->qpel_precision, 0);
+
+	sad += (data->lambda8 * t * (sad+NEIGH_8X8_BIAS))>>10;
+
+	if (sad < *(data->iMinSAD)) {
+		data->iMinSAD2 = *(data->iMinSAD);
+		data->currentQMV2.x = data->currentQMV->x;
+		data->currentQMV2.y = data->currentQMV->y;
+
+		*(data->iMinSAD) = sad;
+		data->currentQMV->x = x; data->currentQMV->y = y;
+		data->dir = Direction;
+	} else if (sad < data->iMinSAD2) {
+		data->iMinSAD2 = sad;
+		data->currentQMV2.x = x; data->currentQMV2.y = y;
+	}
+}
+
+static void
+CheckCandidate32(const int x, const int y, SearchData * const data, const unsigned int Direction)
+{
+	uint32_t t;
+	const uint8_t * Reference;
+	int sad;
+
+	if ( (!(x&1) && x !=0) || (!(y&1) && y !=0) || /* non-zero even value */
+		(x > data->max_dx) || (x < data->min_dx)
+		|| (y > data->max_dy) || (y < data->min_dy) ) return;
+
+	Reference = GetReference(x, y, data);
+	t = d_mv_bits(x, y, data->predMV, data->iFcode, 0, 1);
+
+	sad = sad32v_c(data->Cur, Reference, data->iEdgedWidth, data->temp);
+
+	sad += (data->lambda16 * t * sad) >> 10;
+	data->temp[0] += (data->lambda8 * t * (data->temp[0] + NEIGH_8X8_BIAS))>>10;
+
+	if (sad < data->iMinSAD[0]) {
+		data->iMinSAD[0] = sad;
+		data->currentMV[0].x = x; data->currentMV[0].y = y;
+		data->dir = Direction;
+	}
+
+	if (data->temp[0] < data->iMinSAD[1]) {
+		data->iMinSAD[1] = data->temp[0]; data->currentMV[1].x = x; data->currentMV[1].y = y; }
+	if (data->temp[1] < data->iMinSAD[2]) {
+		data->iMinSAD[2] = data->temp[1]; data->currentMV[2].x = x; data->currentMV[2].y = y; }
+	if (data->temp[2] < data->iMinSAD[3]) {
+		data->iMinSAD[3] = data->temp[2]; data->currentMV[3].x = x; data->currentMV[3].y = y; }
+	if (data->temp[3] < data->iMinSAD[4]) {
+		data->iMinSAD[4] = data->temp[3]; data->currentMV[4].x = x; data->currentMV[4].y = y; }
+}
+
 int
 xvid_me_SkipDecisionP(const IMAGE * current, const IMAGE * reference,
 							const int x, const int y,
-							const uint32_t stride, const uint32_t iQuant)
+							const uint32_t stride, const uint32_t iQuant, int rrv)
 {
 	int offset = (x + y*stride)*8;
-	uint32_t sadC = sad8(current->u + offset,
-					reference->u + offset, stride);
-	if (sadC > iQuant * MAX_CHROMA_SAD_FOR_SKIP) return 0;
-	sadC += sad8(current->v + offset,
-					reference->v + offset, stride);
-	if (sadC > iQuant * MAX_CHROMA_SAD_FOR_SKIP) return 0;
-	return 1;
+	if(!rrv) {
+		uint32_t sadC = sad8(current->u + offset,
+						reference->u + offset, stride);
+		if (sadC > iQuant * MAX_CHROMA_SAD_FOR_SKIP) return 0;
+		sadC += sad8(current->v + offset,
+						reference->v + offset, stride);
+		if (sadC > iQuant * MAX_CHROMA_SAD_FOR_SKIP) return 0;
+		return 1;
+
+	} else {
+		uint32_t sadC = sad16(current->u + 2*offset,
+						reference->u + 2*offset, stride, 256*4096);
+		if (sadC > iQuant * MAX_CHROMA_SAD_FOR_SKIP*4) return 0;
+		sadC += sad16(current->v + 2*offset,
+						reference->v + 2*offset, stride, 256*4096);
+		if (sadC > iQuant * MAX_CHROMA_SAD_FOR_SKIP*4) return 0;
+		return 1;
+	}
 }
 
 	/*
@@ -266,8 +379,7 @@ ModeDecision_SAD(SearchData * const Data,
 				const IMAGE * const pCurrent,
 				const IMAGE * const pRef,
 				const IMAGE * const vGMC,
-				const int coding_type,
-				const int skip_sad)
+				const int coding_type)
 {
 	int mode = MODE_INTER;
 	int mcsel = 0;
@@ -293,9 +405,9 @@ ModeDecision_SAD(SearchData * const Data,
 	}
 
 	/* final skip decision, a.k.a. "the vector you found, really that good?" */
-	if (skip_possible && (skip_sad < (int)iQuant * MAX_SAD00_FOR_SKIP))
-		if ( (100*skip_sad)/(pMB->sad16+1) > FINAL_SKIP_THRESH)
-			if (Data->chroma || xvid_me_SkipDecisionP(pCurrent, pRef, x, y, Data->iEdgedWidth/2, iQuant)) {
+	if (skip_possible && (pMB->sad16 < (int)iQuant * MAX_SAD00_FOR_SKIP))
+		if ( (100*sad)/(pMB->sad16+1) > FINAL_SKIP_THRESH)
+			if (Data->chroma || xvid_me_SkipDecisionP(pCurrent, pRef, x, y, Data->iEdgedWidth/2, iQuant, Data->rrv)) {
 				mode = MODE_NOT_CODED;
 				sad = 0;
 			}
@@ -327,14 +439,28 @@ ModeDecision_SAD(SearchData * const Data,
 		if ((pMB - 1)->mode == MODE_INTRA ) InterBias -= 80;
 
 	if (Data->chroma) InterBias += 50; /* dev8(chroma) ??? <-- yes, we need dev8 (no big difference though) */
+	if (Data->rrv) InterBias *= 4;
 
 	if (InterBias < sad) {
-		int32_t deviation = dev16(Data->Cur, Data->iEdgedWidth);
+		int32_t deviation;
+		if (!Data->rrv)
+			deviation = dev16(Data->Cur, Data->iEdgedWidth);
+		else
+			deviation = dev16(Data->Cur, Data->iEdgedWidth) + /* dev32() */
+						dev16(Data->Cur+16, Data->iEdgedWidth) +
+						dev16(Data->Cur + 16*Data->iEdgedWidth, Data->iEdgedWidth) +
+						dev16(Data->Cur+16+16*Data->iEdgedWidth, Data->iEdgedWidth);
+
 		if (deviation < (sad - InterBias)) mode = MODE_INTRA;
 	}
 
 	pMB->cbp = 63;
 	pMB->sad16 = pMB->sad8[0] = pMB->sad8[1] = pMB->sad8[2] = pMB->sad8[3] = sad;
+
+	if (Data->rrv) {
+			Data->currentMV[0].x = RRV_MV_SCALEDOWN(Data->currentMV[0].x);
+			Data->currentMV[0].y = RRV_MV_SCALEDOWN(Data->currentMV[0].y);
+	}
 
 	if (mode == MODE_INTER && mcsel == 0) {
 		pMB->mvs[0] = pMB->mvs[1] = pMB->mvs[2] = pMB->mvs[3] = Data->currentMV[0];
@@ -369,8 +495,10 @@ ModeDecision_SAD(SearchData * const Data,
 
 static __inline void
 PreparePredictionsP(VECTOR * const pmv, int x, int y, int iWcount,
-			int iHcount, const MACROBLOCK * const prevMB)
+			int iHcount, const MACROBLOCK * const prevMB, int rrv)
 {
+	/* this function depends on get_pmvdata which means that it sucks. It should get the predictions by itself */
+	if (rrv) { iWcount /= 2; iHcount /= 2; }
 
 	if ( (y != 0) && (x < (iWcount-1)) ) {		/* [5] top-right neighbour */
 		pmv[5].x = EVEN(pmv[3].x);
@@ -395,6 +523,14 @@ PreparePredictionsP(VECTOR * const pmv, int x, int y, int iWcount,
 		pmv[6].x = EVEN((prevMB+1+iWcount)->mvs[0].x); /* [6] right-down neighbour in last frame */
 		pmv[6].y = EVEN((prevMB+1+iWcount)->mvs[0].y);
 	} else pmv[6].x = pmv[6].y = 0;
+
+	if (rrv) {
+		int i;
+		for (i = 0; i < 7; i++) {
+			pmv[i].x = RRV_MV_SCALEUP(pmv[i].x);
+			pmv[i].y = RRV_MV_SCALEUP(pmv[i].y);
+		}
+	}
 }
 
 static void
@@ -408,7 +544,7 @@ Search8(SearchData * const OldData,
 		SearchData * const Data)
 {
 	int i = 0;
-	VECTOR vbest_q; int32_t sbest_q;
+	CheckFunc * CheckCandidate;
 	*Data->iMinSAD = *(OldData->iMinSAD + 1 + block);
 	*Data->currentMV = *(OldData->currentMV + 1 + block);
 	*Data->currentQMV = *(OldData->currentQMV + 1 + block);
@@ -416,79 +552,78 @@ Search8(SearchData * const OldData,
 	if(Data->qpel) {
 		Data->predMV = get_qpmv2(pMBs, pParam->mb_width, 0, x/2, y/2, block);
 		if (block != 0)	i = d_mv_bits(	Data->currentQMV->x, Data->currentQMV->y,
-										Data->predMV, Data->iFcode, 0);
+										Data->predMV, Data->iFcode, 0, 0);
 	} else {
 		Data->predMV = get_pmv2(pMBs, pParam->mb_width, 0, x/2, y/2, block);
 		if (block != 0)	i = d_mv_bits(	Data->currentMV->x, Data->currentMV->y,
-										Data->predMV, Data->iFcode, 0);
+										Data->predMV, Data->iFcode, 0, Data->rrv);
 	}
 
 	*(Data->iMinSAD) += (Data->lambda8 * i * (*Data->iMinSAD + NEIGH_8X8_BIAS))>>10;
 
 	if (MotionFlags & (XVID_ME_EXTSEARCH8|XVID_ME_HALFPELREFINE8|XVID_ME_QUARTERPELREFINE8)) {
 
-		vbest_q = Data->currentQMV[0];
-		sbest_q = Data->iMinSAD[0];
+		if (Data->rrv) i = 16; else i = 8;
 
+		Data->RefP[0] = OldData->RefP[0] + i * ((block&1) + Data->iEdgedWidth*(block>>1));
+		Data->RefP[1] = OldData->RefP[1] + i * ((block&1) + Data->iEdgedWidth*(block>>1));
+		Data->RefP[2] = OldData->RefP[2] + i * ((block&1) + Data->iEdgedWidth*(block>>1));
+		Data->RefP[3] = OldData->RefP[3] + i * ((block&1) + Data->iEdgedWidth*(block>>1));
 
-		Data->RefP[0] = OldData->RefP[0] + 8 * ((block&1) + Data->iEdgedWidth*(block>>1));
-		Data->RefP[1] = OldData->RefP[1] + 8 * ((block&1) + Data->iEdgedWidth*(block>>1));
-		Data->RefP[2] = OldData->RefP[2] + 8 * ((block&1) + Data->iEdgedWidth*(block>>1));
-		Data->RefP[3] = OldData->RefP[3] + 8 * ((block&1) + Data->iEdgedWidth*(block>>1));
-
-		Data->Cur = OldData->Cur + 8 * ((block&1) + Data->iEdgedWidth*(block>>1));
+		Data->Cur = OldData->Cur + i * ((block&1) + Data->iEdgedWidth*(block>>1));
 		Data->qpel_precision = 0;
 
 		get_range(&Data->min_dx, &Data->max_dx, &Data->min_dy, &Data->max_dy, x, y, 3,
-					pParam->width, pParam->height, Data->iFcode - Data->qpel, 1);
+					pParam->width, pParam->height, Data->iFcode - Data->qpel, 1, Data->rrv);
+
+		if (!Data->rrv) CheckCandidate = CheckCandidate8;
+		else CheckCandidate = CheckCandidate16no4v;
 
 		if (MotionFlags & XVID_ME_EXTSEARCH8 && (!(MotionFlags & XVID_ME_EXTSEARCH_RD))) {
+			int32_t temp_sad = *(Data->iMinSAD); /* store current MinSAD */
 
 			MainSearchFunc *MainSearchPtr;
 			if (MotionFlags & XVID_ME_USESQUARES8) MainSearchPtr = xvid_me_SquareSearch;
 				else if (MotionFlags & XVID_ME_ADVANCEDDIAMOND8) MainSearchPtr = xvid_me_AdvDiamondSearch;
 					else MainSearchPtr = xvid_me_DiamondSearch;
 
-			MainSearchPtr(Data->currentMV->x, Data->currentMV->y, Data, 255, CheckCandidate8);
-		}
+			MainSearchPtr(Data->currentMV->x, Data->currentMV->y, Data, 255, CheckCandidate);
 
-		if(!Data->qpel) {
-			/* halfpel mode */
-			if (MotionFlags & XVID_ME_HALFPELREFINE8)
-				/* perform halfpel refine of current best vector */
-				xvid_me_SubpelRefine(Data->currentMV[0], Data, CheckCandidate8, 0);
-		} else {
-			/* qpel mode */
-			Data->currentQMV->x = 2*Data->currentMV->x;
-			Data->currentQMV->y = 2*Data->currentMV->y;
-			
-			if(MotionFlags & XVID_ME_FASTREFINE8) {
-				/* fast */
-				get_range(&Data->min_dx, &Data->max_dx, &Data->min_dy, &Data->max_dy, x, y, 3,
-					pParam->width, pParam->height, Data->iFcode, 2);
-				FullRefine_Fast(Data, CheckCandidate8, 0);
-			} else if(MotionFlags & XVID_ME_QUARTERPELREFINE8) {
-				/* full */
-				if (MotionFlags & XVID_ME_HALFPELREFINE8) {
-					xvid_me_SubpelRefine(Data->currentMV[0], Data, CheckCandidate8, 0); /* hpel part */
-					Data->currentQMV->x = 2*Data->currentMV->x;
-					Data->currentQMV->y = 2*Data->currentMV->y;
-				}
-
-				get_range(&Data->min_dx, &Data->max_dx, &Data->min_dy, &Data->max_dy, x, y, 3,
-					pParam->width, pParam->height, Data->iFcode, 2);
-				Data->qpel_precision = 1;
-
-				xvid_me_SubpelRefine(Data->currentQMV[0], Data, CheckCandidate8, 0); /* qpel part */
+			if(*(Data->iMinSAD) < temp_sad) {
+					Data->currentQMV->x = 2 * Data->currentMV->x; /* update our qpel vector */
+					Data->currentQMV->y = 2 * Data->currentMV->y;
 			}
 		}
 
-		if (sbest_q <= Data->iMinSAD[0]) /* we have not found a better match */
-			Data->currentQMV[0] = vbest_q;
+		if (MotionFlags & XVID_ME_HALFPELREFINE8) {
+			int32_t temp_sad = *(Data->iMinSAD); /* store current MinSAD */
 
+			xvid_me_SubpelRefine(Data, CheckCandidate); /* perform halfpel refine of current best vector */
+
+			if(*(Data->iMinSAD) < temp_sad) { /* we have found a better match */
+				Data->currentQMV->x = 2 * Data->currentMV->x; /* update our qpel vector */
+				Data->currentQMV->y = 2 * Data->currentMV->y;
+			}
+		}
+
+		if (Data->qpel && (MotionFlags & XVID_ME_QUARTERPELREFINE8)) {
+				Data->qpel_precision = 1;
+				get_range(&Data->min_dx, &Data->max_dx, &Data->min_dy, &Data->max_dy, x, y, 3,
+					pParam->width, pParam->height, Data->iFcode, 2, 0);
+
+				if((MotionFlags & XVID_ME_FASTREFINE8) && (!Data->rrv))
+					SubpelRefine_Fast(Data, CheckCandidate8_qpel);
+				else
+					xvid_me_SubpelRefine(Data, CheckCandidate);
+		}
 	}
 
-	if(Data->qpel) {		
+	if (Data->rrv) {
+			Data->currentMV->x = RRV_MV_SCALEDOWN(Data->currentMV->x);
+			Data->currentMV->y = RRV_MV_SCALEDOWN(Data->currentMV->y);
+	}
+
+	if(Data->qpel) {
 		pMB->pmvs[block].x = Data->currentQMV->x - Data->predMV.x;
 		pMB->pmvs[block].y = Data->currentQMV->y - Data->predMV.y;
 		pMB->qmvs[block] = *Data->currentQMV;
@@ -530,21 +665,22 @@ SearchP(const IMAGE * const pRef,
 	CheckFunc * CheckCandidate;
 
 	get_range(&Data->min_dx, &Data->max_dx, &Data->min_dy, &Data->max_dy, x, y, 4,
-						pParam->width, pParam->height, Data->iFcode - Data->qpel, 1);
+						pParam->width, pParam->height, Data->iFcode - Data->qpel, 1, Data->rrv);
 
 	get_pmvdata2(pMBs, pParam->mb_width, 0, x, y, pmv, Data->temp);
 
 	Data->chromaX = Data->chromaY = 0; /* chroma-sad cache */
-	Data->Cur = pCur->y + (x + y * Data->iEdgedWidth) * 16;
-	Data->CurV = pCur->v + (x + y * (Data->iEdgedWidth/2)) * 8;
-	Data->CurU = pCur->u + (x + y * (Data->iEdgedWidth/2)) * 8;
+	i = Data->rrv ? 2 : 1;
+	Data->Cur = pCur->y + (x + y * Data->iEdgedWidth) * 16*i;
+	Data->CurV = pCur->v + (x + y * (Data->iEdgedWidth/2)) * 8*i;
+	Data->CurU = pCur->u + (x + y * (Data->iEdgedWidth/2)) * 8*i;
 
-	Data->RefP[0] = pRef->y + (x + Data->iEdgedWidth*y) * 16;
-	Data->RefP[2] = pRefH + (x + Data->iEdgedWidth*y) * 16;
-	Data->RefP[1] = pRefV + (x + Data->iEdgedWidth*y) * 16;
-	Data->RefP[3] = pRefHV + (x + Data->iEdgedWidth*y) * 16;
-	Data->RefP[4] = pRef->u + (x + y * (Data->iEdgedWidth/2)) * 8;
-	Data->RefP[5] = pRef->v + (x + y * (Data->iEdgedWidth/2)) * 8;
+	Data->RefP[0] = pRef->y + (x + Data->iEdgedWidth*y) * 16*i;
+	Data->RefP[2] = pRefH + (x + Data->iEdgedWidth*y) * 16*i;
+	Data->RefP[1] = pRefV + (x + Data->iEdgedWidth*y) * 16*i;
+	Data->RefP[3] = pRefHV + (x + Data->iEdgedWidth*y) * 16*i;
+	Data->RefP[4] = pRef->u + (x + y * (Data->iEdgedWidth/2)) * 8*i;
+	Data->RefP[5] = pRef->v + (x + y * (Data->iEdgedWidth/2)) * 8*i;
 
 	Data->lambda16 = xvid_me_lambda_vec16[pMB->quant];
 	Data->lambda8 = xvid_me_lambda_vec8[pMB->quant];
@@ -556,7 +692,7 @@ SearchP(const IMAGE * const pRef,
 	if (Data->qpel) Data->predMV = get_qpmv2(pMBs, pParam->mb_width, 0, x, y, 0);
 	else Data->predMV = pmv[0];
 
-	i = d_mv_bits(0, 0, Data->predMV, Data->iFcode, 0);
+	i = d_mv_bits(0, 0, Data->predMV, Data->iFcode, 0, 0);
 	Data->iMinSAD[0] = pMB->sad16 + ((Data->lambda16 * i * pMB->sad16)>>10);
 	Data->iMinSAD[1] = pMB->sad8[0] + ((Data->lambda8 * i * (pMB->sad8[0]+NEIGH_8X8_BIAS)) >> 10);
 	Data->iMinSAD[2] = pMB->sad8[1];
@@ -571,10 +707,12 @@ SearchP(const IMAGE * const pRef,
 		threshA = 512;
 
 	PreparePredictionsP(pmv, x, y, pParam->mb_width, pParam->mb_height,
-					prevMBs + x + y * pParam->mb_width);
+					prevMBs + x + y * pParam->mb_width, Data->rrv);
 
-	if (inter4v) CheckCandidate = CheckCandidate16;
-	else CheckCandidate = CheckCandidate16no4v; /* for extra speed */
+	if (!Data->rrv) {
+		if (inter4v) CheckCandidate = CheckCandidate16;
+			else CheckCandidate = CheckCandidate16no4v; /* for extra speed */
+	} else CheckCandidate = CheckCandidate32;
 
 /* main loop. checking all predictions (but first, which is 0,0 and has been checked in MotionEstimation())*/
 
@@ -609,6 +747,9 @@ SearchP(const IMAGE * const pRef,
 			if (Data->qpel) {
 				startMV.x /= 2;
 				startMV.y /= 2;
+			} else if (Data->rrv) {
+				startMV.x = RRV_MV_SCALEUP(startMV.x);
+				startMV.y = RRV_MV_SCALEUP(startMV.y);
 			}
 			if (!(MVequal(startMV, backupMV))) {
 				bSAD = Data->iMinSAD[0]; Data->iMinSAD[0] = MV_MAX_ERROR;
@@ -617,8 +758,7 @@ SearchP(const IMAGE * const pRef,
 				xvid_me_DiamondSearch(startMV.x, startMV.y, Data, 255, CheckCandidate);
 				if (bSAD < Data->iMinSAD[0]) {
 					Data->currentMV[0] = backupMV;
-					Data->iMinSAD[0] = bSAD; 
-				}
+					Data->iMinSAD[0] = bSAD; }
 			}
 
 			backupMV = Data->currentMV[0];
@@ -636,43 +776,27 @@ SearchP(const IMAGE * const pRef,
 		}
 	}
 
+	if (MotionFlags & XVID_ME_HALFPELREFINE16)
+			xvid_me_SubpelRefine(Data, CheckCandidate);
 
-	if(!Data->qpel) {
-		/* halfpel mode */
-		if (MotionFlags & XVID_ME_HALFPELREFINE16)
-				xvid_me_SubpelRefine(Data->currentMV[0], Data, CheckCandidate, 0);	
-	} else {
-		/* qpel mode */
-		
-		for(i = 0; i < 5; i++) {
-			Data->currentQMV[i].x = 2 * Data->currentMV[i].x; /* initialize qpel vectors */
-			Data->currentQMV[i].y = 2 * Data->currentMV[i].y;
-		}			
-		if(MotionFlags & XVID_ME_FASTREFINE16 && MotionFlags & XVID_ME_QUARTERPELREFINE16) {
-			/* fast */
-			get_range(&Data->min_dx, &Data->max_dx, &Data->min_dy, &Data->max_dy, x, y, 4,
-						pParam->width, pParam->height, Data->iFcode, 2);
-			FullRefine_Fast(Data, CheckCandidate, 0);
-		} else {
-			if(MotionFlags & (XVID_ME_QUARTERPELREFINE16 | XVID_ME_QUARTERPELREFINE16_RD)) {
-				/* full */
-				if (MotionFlags & XVID_ME_HALFPELREFINE16) {
-					xvid_me_SubpelRefine(Data->currentMV[0], Data, CheckCandidate, 0); /* hpel part */
-					for(i = 0; i < 5; i++) {
-						Data->currentQMV[i].x = 2 * Data->currentMV[i].x;
-						Data->currentQMV[i].y = 2 * Data->currentMV[i].y;
-					}
-				}
-				get_range(&Data->min_dx, &Data->max_dx, &Data->min_dy, &Data->max_dy, x, y, 4,
-							pParam->width, pParam->height, Data->iFcode, 2);
-				Data->qpel_precision = 1;
-				if(MotionFlags & XVID_ME_QUARTERPELREFINE16)
-					xvid_me_SubpelRefine(Data->currentQMV[0], Data, CheckCandidate, 0); /* qpel part */
-			}
+	for(i = 0; i < 5; i++) {
+		Data->currentQMV[i].x = 2 * Data->currentMV[i].x; /* initialize qpel vectors */
+		Data->currentQMV[i].y = 2 * Data->currentMV[i].y;
+	}
+
+	if (Data->qpel) {
+		get_range(&Data->min_dx, &Data->max_dx, &Data->min_dy, &Data->max_dy, x, y, 4,
+				pParam->width, pParam->height, Data->iFcode, 2, 0);
+		Data->qpel_precision = 1;
+		if (MotionFlags & XVID_ME_QUARTERPELREFINE16) {
+			if(MotionFlags & XVID_ME_FASTREFINE16)
+				SubpelRefine_Fast(Data, CheckCandidate16_qpel);
+			else
+				xvid_me_SubpelRefine(Data, CheckCandidate16_qpel);
 		}
 	}
 
-	if (Data->iMinSAD[0] < (int32_t)pMB->quant * 30 * ((MotionFlags & XVID_ME_FASTREFINE16) ? 8 : 1))
+	if (Data->iMinSAD[0] < (int32_t)pMB->quant * 30*((MotionFlags & XVID_ME_FASTREFINE16) ? 8 : 1))
 		inter4v = 0;
 
 	if (inter4v) {
@@ -685,7 +809,7 @@ SearchP(const IMAGE * const pRef,
 		Search8(Data, 2*x + 1, 2*y + 1, MotionFlags, pParam, pMB, pMBs, 3, &Data8);
 
 		if ((Data->chroma) && (!(VopFlags & XVID_VOP_MODEDECISION_RD))) {
-			/* chroma is only used for comparison to INTER. if the comparison will be done in RD domain, it will not be used */
+			/* chroma is only used for comparsion to INTER. if the comparsion will be done in BITS domain, it will not be used */
 			int sumx = 0, sumy = 0;
 
 			if (Data->qpel)
@@ -739,51 +863,10 @@ MakeGoodMotionFlags(const uint32_t MotionFlags, const uint32_t VopFlags, const u
 	if (!(VopFlags & XVID_VOP_HALFPEL))
 		Flags &= ~(XVID_ME_EXTSEARCH16+XVID_ME_HALFPELREFINE16+XVID_ME_HALFPELREFINE8+XVID_ME_HALFPELREFINE16_RD+XVID_ME_HALFPELREFINE8_RD);
 
-	if (VopFlags & XVID_VOP_GREYSCALE)
+	if ((VopFlags & XVID_VOP_GREYSCALE) || (VopFlags & XVID_VOP_REDUCED))
 		Flags &= ~(XVID_ME_CHROMA_PVOP + XVID_ME_CHROMA_BVOP);
 
-	if (Flags & XVID_ME_FASTREFINE8)
-		Flags &= ~XVID_ME_HALFPELREFINE8_RD;
-
-	if (Flags & XVID_ME_FASTREFINE16)
-		Flags &= ~XVID_ME_HALFPELREFINE16_RD;
-
 	return Flags;
-}
-
-static __inline void
-motionStatsPVOP(int * const MVmax, int * const mvCount, int * const mvSum,
-				const MACROBLOCK * const pMB, const int qpel)
-{
-	const VECTOR * const mv = qpel ? pMB->qmvs : pMB->mvs;
-	int i;
-	int max = *MVmax;
-
-	switch (pMB->mode) {
-	case MODE_INTER4V:
-		*mvCount += 3;
-		for(i = 3; i; i--) {
-			if (mv[i].x > max) max = mv[i].x;
-			else if (-mv[i].x - 1 > max) max = -mv[i].x - 1;
-			*mvSum += mv[i].x * mv[i].x;
-			if (mv[i].y > max) max = mv[i].y;
-			else if (-mv[i].y - 1 > max) max = -mv[i].y - 1;
-			*mvSum += mv[i].y * mv[i].y;
-		}
-	case MODE_INTER:
-		(*mvCount)++;	/* add mcsel==1 vector to statistics too, or else we ignore useful motion range info */
-		*mvSum += mv[0].x * mv[0].x;
-		*mvSum += mv[0].y * mv[0].y;
-		if (pMB->mcsel == 0) {
-			if (mv[0].x > max) max = mv[0].x;
-			else if (-mv[0].x - 1 > max) max = -mv[0].x - 1;
-			if (mv[0].y > max) max = mv[0].y;
-			else if (-mv[0].y - 1 > max) max = -mv[0].y - 1;
-			*MVmax = max;
-		}
-	default:
-		break;
-	}
 }
 
 bool
@@ -800,16 +883,17 @@ MotionEstimation(MBParam * const pParam,
 	const IMAGE *const pCurrent = &current->image;
 	const IMAGE *const pRef = &reference->image;
 
-	const uint32_t mb_width = pParam->mb_width;
-	const uint32_t mb_height = pParam->mb_height;
+	uint32_t mb_width = pParam->mb_width;
+	uint32_t mb_height = pParam->mb_height;
 	const uint32_t iEdgedWidth = pParam->edged_width;
 	const uint32_t MotionFlags = MakeGoodMotionFlags(current->motion_flags, current->vop_flags, current->vol_flags);
 	int stat_thresh = 0;
-	int MVmax = 0, mvSum = 0, mvCount = 0;
 
 	uint32_t x, y;
+	uint32_t iIntra = 0;
 	int32_t sad00;
 	int skip_thresh = INITIAL_SKIP_THRESH * \
+		(current->vop_flags & XVID_VOP_REDUCED ? 4:1) * \
 		(current->vop_flags & XVID_VOP_MODEDECISION_RD ? 2:1);
 
 	/* some pre-initialized thingies for SearchP */
@@ -821,9 +905,17 @@ MotionEstimation(MBParam * const pParam,
 	Data.rounding = pParam->m_rounding_type;
 	Data.qpel = (current->vol_flags & XVID_VOL_QUARTERPEL ? 1:0);
 	Data.chroma = MotionFlags & XVID_ME_CHROMA_PVOP;
+	Data.rrv = (current->vop_flags & XVID_VOP_REDUCED) ? 1:0;
 	Data.dctSpace = dct_space;
 	Data.quant_type = !(pParam->vol_flags & XVID_VOL_MPEGQUANT);
 	Data.mpeg_quant_matrices = pParam->mpeg_quant_matrices;
+	Data.iMinSAD2 = 0;
+
+	if ((current->vop_flags & XVID_VOP_REDUCED)) {
+		mb_width = (pParam->width + 31) / 32;
+		mb_height = (pParam->height + 31) / 32;
+		Data.qpel = 0;
+	}
 
 	Data.RefQ = pRefV->u; /* a good place, also used in MC (for similar purpose) */
 	if (sadInit) (*sadInit) ();
@@ -833,12 +925,15 @@ MotionEstimation(MBParam * const pParam,
 			MACROBLOCK *pMB = &pMBs[x + y * pParam->mb_width];
 			MACROBLOCK *prevMB = &reference->mbs[x + y * pParam->mb_width];
 
-			pMB->sad16 =
+			if (!Data.rrv) pMB->sad16 =
 				sad16v(pCurrent->y + (x + y * iEdgedWidth) * 16,
 							pRef->y + (x + y * iEdgedWidth) * 16,
-							pParam->edged_width, pMB->sad8);
-			
-			sad00 = 4*MAX(MAX(pMB->sad8[0], pMB->sad8[1]), MAX(pMB->sad8[2], pMB->sad8[3]));
+							pParam->edged_width, pMB->sad8 );
+
+			else pMB->sad16 =
+				sad32v_c(pCurrent->y + (x + y * iEdgedWidth) * 32,
+							pRef->y + (x + y * iEdgedWidth) * 32,
+							pParam->edged_width, pMB->sad8 );
 
 			if (Data.chroma) {
 				Data.chromaSAD = sad8(pCurrent->u + x*8 + y*(iEdgedWidth/2)*8,
@@ -846,13 +941,15 @@ MotionEstimation(MBParam * const pParam,
 								+ sad8(pCurrent->v + (x + y*(iEdgedWidth/2))*8,
 									pRef->v + (x + y*(iEdgedWidth/2))*8, iEdgedWidth/2);
 				pMB->sad16 += Data.chromaSAD;
-				sad00 += Data.chromaSAD;
 			}
 
+			sad00 = pMB->sad16;
+
 			/* initial skip decision */
+			/* no early skip for GMC (global vector = skip vector is unknown!)  */
 			if (current->coding_type != S_VOP)	{ /* no fast SKIP for S(GMC)-VOPs */
 				if (pMB->dquant == 0 && sad00 < pMB->quant * skip_thresh)
-					if (Data.chroma || xvid_me_SkipDecisionP(pCurrent, pRef, x, y, iEdgedWidth/2, pMB->quant)) {
+					if (Data.chroma || xvid_me_SkipDecisionP(pCurrent, pRef, x, y, iEdgedWidth/2, pMB->quant, Data.rrv)) {
 						ZeroMacroblockP(pMB, sad00);
 						pMB->mode = MODE_NOT_CODED;
 						continue;
@@ -901,16 +998,14 @@ MotionEstimation(MBParam * const pParam,
 			else
 				ModeDecision_SAD(&Data, pMB, pMBs, x, y, pParam,
 								MotionFlags, current->vop_flags, current->vol_flags,
-								pCurrent, pRef, pGMC, current->coding_type, sad00);
+								pCurrent, pRef, pGMC, current->coding_type);
 
 
-			motionStatsPVOP(&MVmax, &mvCount, &mvSum, pMB, Data.qpel);
+			if (pMB->mode == MODE_INTRA)
+				if (++iIntra > iLimit) return 1;
 		}
 	}
-
-	current->fcode = getMinFcode(MVmax);
-	current->sStat.iMvSum = mvSum;
-	current->sStat.iMvCount = mvCount;
-
 	return 0;
 }
+
+
