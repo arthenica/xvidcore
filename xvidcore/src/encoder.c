@@ -15,7 +15,6 @@
 #include "utils/emms.h"
 #include "bitstream/mbcoding.h"
 #include "quant/adapt_quant.h"
-#include "quant/quant_matrix.h"
 
 #define ENC_CHECK(X) if(!(X)) return XVID_ERR_FORMAT
 
@@ -217,7 +216,7 @@ int encoder_encode(Encoder * pEnc, XVID_ENC_FRAME * pFrame, XVID_ENC_STATS * pRe
     Bitstream bs;
     uint32_t bits;
 	uint16_t quant_type = 0;
-	uint16_t write_vol_header = 0;
+	uint16_t quant_change = 0;
 
     IMAGE *pCurrent = &(pEnc->sCurrent);
 
@@ -274,19 +273,11 @@ int encoder_encode(Encoder * pEnc, XVID_ENC_FRAME * pFrame, XVID_ENC_STATS * pRe
 
 	if(pEnc->mbParam.quant_type != quant_type) {
 		pEnc->mbParam.quant_type = quant_type;
-		write_vol_header = 1;
+		quant_change = 1;
 	}
 	else
-		write_vol_header = 0;
+		quant_change = 0;
 
-	if ((pEnc->mbParam.global_flags & XVID_CUSTOM_QMATRIX) > 0)
-	{
-		int ret1, ret2;
-		ret1 = set_intra_matrix(pFrame->quant_intra_matrix);
-		ret2 = set_inter_matrix(pFrame->quant_inter_matrix);
-		if(write_vol_header == 0)
-			write_vol_header = ret1 | ret2;
-	}
 
 	if (pFrame->intra < 0)
     {
@@ -295,14 +286,14 @@ int encoder_encode(Encoder * pEnc, XVID_ENC_FRAME * pFrame, XVID_ENC_STATS * pRe
 
 			pFrame->intra = FrameCodeI(pEnc, &bs, &bits);
 		else
-			pFrame->intra = FrameCodeP(pEnc, &bs, &bits, 0, write_vol_header);
+			pFrame->intra = FrameCodeP(pEnc, &bs, &bits, 0, quant_change);
     }
     else
     {
 		if (pFrame->intra == 1)
 		    pFrame->intra = FrameCodeI(pEnc, &bs, &bits);
 		else
-			pFrame->intra = FrameCodeP(pEnc, &bs, &bits, 1, write_vol_header);
+			pFrame->intra = FrameCodeP(pEnc, &bs, &bits, 1, quant_change);
     }
 
 	BitstreamPutBits(&bs, 0xFFFF, 16);
