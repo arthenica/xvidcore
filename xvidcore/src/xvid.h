@@ -3,7 +3,7 @@
  * XVID MPEG-4 VIDEO CODEC
  * - XviD Main header file -
  *
- *  Copyright(C) 2001-2004 Peter Ross <pross@xvid.org>
+ *  Copyright(C) 2001-2003 Peter Ross <pross@xvid.org>
  *
  *  This program is free software ; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid.h,v 1.38 2004-04-18 07:55:11 syskin Exp $
+ * $Id: xvid.h,v 1.33.2.5 2004-05-09 21:21:30 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -57,10 +57,8 @@ extern "C" {
 #define XVID_API_MAJOR(a)        (((a)>>16) & 0xff)
 #define XVID_API_MINOR(a)        (((a)>> 0) & 0xff)
 
-#define XVID_VERSION             XVID_MAKE_VERSION(1,1,-127)
+#define XVID_VERSION             XVID_MAKE_VERSION(1,0,0)
 #define XVID_API                 XVID_MAKE_API(4, 0)
-
-#define XVID_UNSTABLE
 
 /* Bitstream Version
  * this will be writen into the bitstream to allow easy detection of xvid
@@ -73,8 +71,7 @@ extern "C" {
  * doesnt hurt but not increasing it could cause difficulty for decoders in the
  * future
  */
-#define XVID_BS_VERSION "0031"
-
+#define XVID_BS_VERSION 34
 
 /*****************************************************************************
  * error codes
@@ -251,12 +248,6 @@ typedef struct {
 #define XVID_DEBLOCKY      (1<<2) /* perform luma deblocking */
 #define XVID_DEBLOCKUV     (1<<3) /* perform chroma deblocking */
 #define XVID_FILMEFFECT    (1<<4) /* adds film grain */
-#define XVID_DERINGUV      (1<<5) /* perform chroma deringing, requires deblocking to work */
-#define XVID_DERINGY       (1<<6) /* perform luma deringing, requires deblocking to work */
-
-#define XVID_DEC_FAST      (1<<29) /* disable postprocessing to decrease cpu usage *todo* */
-#define XVID_DEC_DROP      (1<<30) /* drop bframes to decrease cpu usage *todo* */
-#define XVID_DEC_PREROLL   (1<<31) /* decode as fast as you can, don't even show output *todo* */
 
 typedef struct {
 	int version;
@@ -264,8 +255,6 @@ typedef struct {
 	void *bitstream;     /* [in]     bitstream (read from)*/
 	int length;          /* [in]     bitstream length */
 	xvid_image_t output; /* [in]     output image (written to) */
-/* ------- v1.1.0 ------- */
-	int brightness;		 /* [in]	 brightness offset (0=none) */
 } xvid_dec_frame_t;
 
 

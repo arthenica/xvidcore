@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: CXvidDecoder.cpp,v 1.7 2004-04-18 07:55:11 syskin Exp $
+ * $Id: CXvidDecoder.cpp,v 1.2.2.2 2004-04-14 03:22:38 syskin Exp $
  *
  ****************************************************************************/
 
@@ -733,17 +733,12 @@ HRESULT CXvidDecoder::Transform(IMediaSample *pIn, IMediaSample *pOut)
 
 	if (g_config.nDeblock_UV)
 		m_frame.general |= XVID_DEBLOCKUV;
-
-	if (g_config.nDering_Y)
-		m_frame.general |= XVID_DERINGY;
-
-	if (g_config.nDering_UV)
-		m_frame.general |= XVID_DERINGUV;
-
+/*
+	if (g_config.nDering)
+		m_frame.general |= XVID_DERING;
+*/
 	if (g_config.nFilmEffect)
 		m_frame.general |= XVID_FILMEFFECT;
-
-	m_frame.brightness = g_config.nBrightness;
 
 	m_frame.output.csp &= ~XVID_CSP_VFLIP;
 	m_frame.output.csp |= rgb_flip^(g_config.nFlipVideo ? XVID_CSP_VFLIP : 0);

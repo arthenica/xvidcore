@@ -619,19 +619,13 @@ CAPTION "Decoder Options"
 FONT 8, "MS Shell Dlg"
 BEGIN
     CONTROL         "Deblocking Y",IDC_DEC_DY,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,15,64,63,13
+                    WS_TABSTOP,21,25,63,13
     CONTROL         "Deblocking UV",IDC_DEC_DUV,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,15,80,61,13
-    CONTROL         "Deringing Y",IDC_DEC_DRY,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,88,64,60,13
+                    WS_TABSTOP,21,42,79,13
+    CONTROL         "Deringing",IDC_DEC_DR,"Button",BS_AUTOCHECKBOX | 
+                    WS_DISABLED | WS_TABSTOP,115,25,60,13
     CONTROL         "Film Effect",IDC_DEC_FE,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,154,64,45,13
-    GROUPBOX        "Brightness",IDC_STATIC,5,6,202,41
-    CONTROL         "Slider1",IDC_DEC_BRIGHTNESS,"msctls_trackbar32",
-                    TBS_AUTOTICKS | TBS_BOTH | WS_TABSTOP,18,18,181,24
-    GROUPBOX        "Postprocessing",IDC_STATIC,5,52,202,46
-    CONTROL         "Deringing UV",IDC_DEC_DRUV,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,88,80,60,13
+                    WS_TABSTOP,115,42,60,13
 END
 
 IDD_STATUS DIALOGEX 0, 0, 325, 220
@@ -934,7 +928,7 @@ BEGIN
     IDC_CHROMAME            "Use chroma information to detect motion (slower)."
     IDC_BQUANTOFFSET        "B-frame quantizer offset from last p-frame quantizer; refer to b-frame quant ratio (above)"
     IDC_VHQ                 "VHQ enables an additional search process to increase quality (much slower)."
-    IDC_CHROMA_OPT          "Interpolates colours in bright/dark areas for achieving a nicer edge impression"
+    IDC_ZONE_CHROMAOPT     "Interpolates colours in bright/dark areas for achieving a nicer edge impression"
 END
 
 STRINGTABLE DISCARDABLE 
@@ -966,7 +960,7 @@ BEGIN
     IDC_LEVEL_VBV           "Video Buffer Verifier (VBV):\n\nThe maximum size of the video decoder buffer. The encoded bitstream but not overflow or underflow this buffer."
     IDC_LEVEL_BITRATE       "Maximum instantaneous bitrate."
     IDC_BITRATE             "The target AVI bitrate, file size, or quantizer."
-    IDC_ZONE_BVOPTHRESHOLD_S 
+    IDC_ZONE_BVOPTHRESHOLD 
                             "Change the amount of b-frames in this zone. Recommended values are between -20 (almost no b-vops) and 30 (many b-vops).\nThe hardcoded maximum in profile/level will never be exceeded"
     IDC_TRELLISQUANT        "Advanced, high quality quantization mode"
     IDC_BITRATE_S           "Toggle between quantizer, target bitrate, target file size"

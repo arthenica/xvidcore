@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: portab.h,v 1.51 2004-04-12 14:05:08 edgomez Exp $
+ * $Id: portab.h,v 1.49.2.1 2004-04-04 19:34:31 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -248,15 +248,6 @@ extern unsigned int xvid_debug;
  | gcc PPC and PPC Altivec specific macros/functions
  *---------------------------------------------------------------------------*/
 #    elif defined(ARCH_IS_PPC)
-
-#        if defined(HAVE_ALTIVEC_PARENTHESES_DECL)
-#            define AVV(x...) (x)
-#        elif defined(HAVE_ALTIVEC_BRACES_DECL)
-#            define AVV(x...) {x}
-#        else
-#            error Trying to compile PPC target without a vector declaration type.
-#        endif
-
 #        define BSWAP(a) __asm__ __volatile__ \
                 ( "lwbrx %0,0,%1; eieio" : "=r" (a) : "r" (&(a)), "m" (a));
 

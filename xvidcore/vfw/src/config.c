@@ -78,7 +78,7 @@ HWND g_hTooltip;
 static int g_use_bitrate = 1;
 
 
-int pp_brightness, pp_dy, pp_duv, pp_fe, pp_dry, pp_druv; /* decoder options */
+int pp_dy, pp_duv, pp_dr, pp_fe; /* decoder options */
 
 /* enumerates child windows, assigns tooltips */
 BOOL CALLBACK enum_tooltips(HWND hWnd, LPARAM lParam)
@@ -276,11 +276,9 @@ static const REG_INT reg_ints[] = {
 	{"display_status",			&reg.display_status,			1},
 	
 	/* decoder, shared with dshow */
-	{"Brightness",				&pp_brightness,					0},
 	{"Deblock_Y",				&pp_dy,							0},
 	{"Deblock_UV",				&pp_duv,						0},
-	{"Dering_Y",				&pp_dry,						0},
-	{"Dering_UV",				&pp_druv,						0},
+	{"Dering",					&pp_dr,							0},
 	{"FilmEffect",				&pp_fe,							0},
 	
 };
@@ -808,11 +806,6 @@ static void adv_init(HWND hDlg, int idd, CONFIG * config)
 		SendDlgItemMessage(hDlg, IDC_FOURCC, CB_ADDSTRING, 0, (LPARAM)"DIVX");
 		SendDlgItemMessage(hDlg, IDC_FOURCC, CB_ADDSTRING, 0, (LPARAM)"DX50");
 		break;
-
-	case IDD_DEC :
-		SendDlgItemMessage(hDlg, IDC_DEC_BRIGHTNESS, TBM_SETRANGE, (WPARAM)TRUE, (LPARAM)MAKELONG(-96, 96));
-		SendDlgItemMessage(hDlg, IDC_DEC_BRIGHTNESS, TBM_SETTICFREQ, (WPARAM)16, (LPARAM)0);
-		break;
 	}
 }
 
@@ -1169,14 +1162,10 @@ static void adv_upload(HWND hDlg, int idd, CONFIG * config)
 		break;
 
 	case IDD_DEC :
-		SendDlgItemMessage(hDlg, IDC_DEC_BRIGHTNESS, TBM_SETPOS, (WPARAM)TRUE, (LPARAM)pp_brightness);
 		CheckDlg(hDlg, IDC_DEC_DY,	pp_dy);
 		CheckDlg(hDlg, IDC_DEC_DUV,	pp_duv);
-		CheckDlg(hDlg, IDC_DEC_DRY,	pp_dry);
-		CheckDlg(hDlg, IDC_DEC_DRUV,pp_druv);
+		CheckDlg(hDlg, IDC_DEC_DR,	pp_dr);
 		CheckDlg(hDlg, IDC_DEC_FE,	pp_fe);
-		EnableDlgWindow(hDlg, IDC_DEC_DRY, pp_dy);
-		EnableDlgWindow(hDlg, IDC_DEC_DRUV, pp_duv);
 		break;
 	}
 }
@@ -1359,11 +1348,9 @@ static void adv_download(HWND hDlg, int idd, CONFIG * config)
 		break;
 
 	case IDD_DEC :
-		pp_brightness = SendDlgItemMessage(hDlg, IDC_DEC_BRIGHTNESS, TBM_GETPOS, (WPARAM)NULL, (LPARAM)NULL);
 		pp_dy = IsDlgChecked(hDlg, IDC_DEC_DY);
 		pp_duv = IsDlgChecked(hDlg, IDC_DEC_DUV);
-		pp_dry = IsDlgChecked(hDlg, IDC_DEC_DRY);
-		pp_druv = IsDlgChecked(hDlg, IDC_DEC_DRUV);
+		pp_dr = IsDlgChecked(hDlg, IDC_DEC_DR);
 		pp_fe = IsDlgChecked(hDlg, IDC_DEC_FE);
 		break;
 	}
@@ -1506,11 +1493,7 @@ static BOOL CALLBACK adv_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam
 				CheckRadioButton(hDlg, IDC_AR, IDC_PAR, IDC_AR);
 				adv_mode(hDlg, psi->idd, psi->config);
 				break;
-			case IDC_DEC_DY:
-			case IDC_DEC_DUV:
-				EnableDlgWindow(hDlg, IDC_DEC_DRY, IsDlgChecked(hDlg, IDC_DEC_DY));
-				EnableDlgWindow(hDlg, IDC_DEC_DRUV, IsDlgChecked(hDlg, IDC_DEC_DUV));
-				break;
+
 			default :
 				return TRUE;
 			}

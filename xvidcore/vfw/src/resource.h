@@ -388,9 +388,7 @@
 #define IDC_TURBO                       1369
 #define IDC_DEC_DUV                     1370
 #define IDC_DEC_DR                      1371
-#define IDC_DEC_DRY                     1371
 #define IDC_DEBUGOUTPUT                 1372
-#define IDC_DEC_DRUV                    1372
 #define IDC_SHOWINTERNALS               1373
 #define IDC_DEC_FE                      1374
 #define IDC_BITRATE_TSIZE               1375
@@ -411,7 +409,6 @@
 #define IDC_BITRATE_ASIZE               1390
 #define IDC_BITRATE_ASELECT             1391
 #define IDC_BITRATE_ADV                 1392
-#define IDC_DEC_BRIGHTNESS              1393
 
 // Next default values for new objects
 // 
@@ -419,7 +416,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        128
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1394
+#define _APS_NEXT_CONTROL_VALUE         1393
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif
