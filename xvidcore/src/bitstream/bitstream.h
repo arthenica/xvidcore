@@ -3,7 +3,7 @@
  *  XVID MPEG-4 VIDEO CODEC
  *  - Bitstream reader/writer inlined functions and constants-
  *
- *  Copyright (C) 2001-2003 - Peter Ross <pross@xvid.org>
+ *  Copyright (C) 2001-2002 - Peter Ross <pross@xvid.org>
  *
  *  This file is part of XviD, a free MPEG-4 video encoder/decoder
  *
@@ -21,12 +21,43 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: bitstream.h,v 1.18 2003-04-04 22:16:15 edgomez Exp $
+ *  Under section 8 of the GNU General Public License, the copyright
+ *  holders of XVID explicitly forbid distribution in the following
+ *  countries:
+ *
+ *    - Japan
+ *    - United States of America
+ *
+ *  Linking XviD statically or dynamically with other modules is making a
+ *  combined work based on XviD.  Thus, the terms and conditions of the
+ *  GNU General Public License cover the whole combination.
+ *
+ *  As a special exception, the copyright holders of XviD give you
+ *  permission to link XviD with independent modules that communicate with
+ *  XviD solely through the VFW1.1 and DShow interfaces, regardless of the
+ *  license terms of these independent modules, and to copy and distribute
+ *  the resulting combined work under terms of your choice, provided that
+ *  every copy of the combined work is accompanied by a complete copy of
+ *  the source code of XviD (the version of XviD used to produce the
+ *  combined work), being distributed under the terms of the GNU General
+ *  Public License plus this exception.  An independent module is a module
+ *  which is not derived from or based on XviD.
+ *
+ *  Note that people who make modified versions of XviD are not obligated
+ *  to grant this special exception for their modified versions; it is
+ *  their choice whether to do so.  The GNU General Public License gives
+ *  permission to release a modified version without this exception; this
+ *  exception also makes it possible to release a modified version which
+ *  carries forward this exception.
+ *
+ * $Id: bitstream.h,v 1.16.2.2 2003-07-28 12:39:32 edgomez Exp $
  *
  ****************************************************************************/
 
 #ifndef _BITSTREAM_H_
 #define _BITSTREAM_H_
+
+#include <stdio.h>
 
 #include "../portab.h"
 #include "../decoder.h"
@@ -47,8 +78,8 @@
 #define GRPOFVOP_START_CODE		0x000001b3
 /*#define VIDSESERR_ERROR_CODE  0x000001b4 */
 #define VISOBJ_START_CODE		0x000001b5
-#define VOP_START_CODE			0x000001b6
-/*#define STUFFING_START_CODE	0x000001c3 */
+/*#define SLICE_START_CODE      0x000001b7 */
+/*#define EXT_START_CODE        0x000001b8 */
 
 
 #define VISOBJ_TYPE_VIDEO				1
@@ -62,15 +93,6 @@
 /*#define VIDOBJLAY_TYPE_SIMPLE_SCALABLE    2 */
 #define VIDOBJLAY_TYPE_CORE				3
 #define VIDOBJLAY_TYPE_MAIN				4
-/*#define VIDOBJLAY_TYPE_NBIT				5 */
-/*#define VIDOBJLAY_TYPE_ANIM_TEXT			6 */
-/*#define VIDOBJLAY_TYPE_ANIM_MESH			7 */
-/*#define VIDOBJLAY_TYPE_SIMPLE_FACE		8 */
-/*#define VIDOBJLAY_TYPE_STILL_SCALABLE		9 */
-#define VIDOBJLAY_TYPE_ART_SIMPLE		10
-/*#define VIDOBJLAY_TYPE_CORE_SCALABLE		11 */
-#define VIDOBJLAY_TYPE_ACE				12
-/*#define VIDOBJLAY_TYPE_SIMPLE_FBA			13 */
 
 
 /*#define VIDOBJLAY_AR_SQUARE           1 */
@@ -86,12 +108,9 @@
 #define VIDOBJLAY_SHAPE_BINARY_ONLY		2
 #define VIDOBJLAY_SHAPE_GRAYSCALE		3
 
-
-#define SPRITE_NONE		0
-#define SPRITE_STATIC	1
-#define SPRITE_GMC		2
-
-
+#define VO_START_CODE	0x8
+#define VOL_START_CODE	0x12
+#define VOP_START_CODE	0x1b6
 
 #define READ_MARKER()	BitstreamSkip(bs, 1)
 #define WRITE_MARKER()	BitstreamPutBit(bs, 1)
@@ -113,38 +132,32 @@
  * Prototypes
  ****************************************************************************/
 
-int read_video_packet_header(Bitstream *bs, 
-							 DECODER * dec, 
-							 const int addbits, 
-							 int *quant, 
-							 int *fcode_forward,
-							 int *fcode_backward,
-							 int *intra_dc_threshold);
+int
+read_video_packet_header(Bitstream *bs, const int addbits, int * quant);
+
 
 /* header stuff */
 int BitstreamReadHeaders(Bitstream * bs,
 						 DECODER * dec,
 						 uint32_t * rounding,
-						 uint32_t * reduced_resolution,
 						 uint32_t * quant,
 						 uint32_t * fcode_forward,
 						 uint32_t * fcode_backward,
-						 uint32_t * intra_dc_threshold,
-						 WARPPOINTS * gmc_warp);
+						 uint32_t * intra_dc_threshold);
 
 
 void BitstreamWriteVolHeader(Bitstream * const bs,
 							 const MBParam * pParam,
-							 const FRAMEINFO * const frame);
+							 const FRAMEINFO * frame);
 
 void BitstreamWriteVopHeader(Bitstream * const bs,
 							 const MBParam * pParam,
-							 const FRAMEINFO * const frame,
+							 const FRAMEINFO * frame,
 							 int vop_coded);
 
-void BitstreamWriteUserData(Bitstream * const bs, 
-							uint8_t * data, 
-							const int length);
+/*****************************************************************************
+ * Inlined functions
+ ****************************************************************************/
 
 /* initialise bitstream structure */
 
@@ -229,7 +242,7 @@ BitstreamShowBits(Bitstream * const bs,
 
 /* skip n bits forward in bitstream */
 
-static __inline void
+static void __inline
 BitstreamSkip(Bitstream * const bs,
 			  const uint32_t bits)
 {
@@ -251,7 +264,7 @@ BitstreamSkip(Bitstream * const bs,
 
 
 /* number of bits to next byte alignment */
-static __inline uint32_t 
+static uint32_t __inline
 BitstreamNumBitsToByteAlign(Bitstream *bs)
 {
 	uint32_t n = (32 - bs->pos) % 8;
@@ -260,7 +273,7 @@ BitstreamNumBitsToByteAlign(Bitstream *bs)
 
 
 /* show nbits from next byte alignment */
-static __inline uint32_t
+static uint32_t __inline
 BitstreamShowBitsFromByteAlign(Bitstream *bs, int bits)
 {
 	int bspos = bs->pos + BitstreamNumBitsToByteAlign(bs);
@@ -282,7 +295,7 @@ BitstreamShowBitsFromByteAlign(Bitstream *bs, int bits)
 
 /* move forward to the next byte boundary */
 
-static __inline void
+static void __inline
 BitstreamByteAlign(Bitstream * const bs)
 {
 	uint32_t remainder = bs->pos % 8;
@@ -302,9 +315,8 @@ BitstreamPos(const Bitstream * const bs)
 }
 
 
-/*
- * flush the bitstream & return length (unit bytes)
- * NOTE: assumes no futher bitstream functions will be called.
+/*	flush the bitstream & return length (unit bytes)
+	NOTE: assumes no futher bitstream functions will be called.
  */
 
 static uint32_t __inline
@@ -435,7 +447,6 @@ BitstreamPad(Bitstream * const bs)
 	if (bits < 8)
 		BitstreamPutBits(bs, stuffing_codes[bits - 1], bits);
 }
-
 
 /*
  * pad bitstream to the next byte boundary 

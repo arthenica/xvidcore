@@ -3,7 +3,7 @@
 # This file builds the configure script and copies all needed files
 # provided by automake/libtoolize
 #
-# $Id: bootstrap.sh,v 1.4 2003-02-26 21:04:40 edgomez Exp $
+# $Id: bootstrap.sh,v 1.1.2.1 2003-03-17 23:24:20 edgomez Exp $
 
 
 ##############################################################################

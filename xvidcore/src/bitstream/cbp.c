@@ -1,86 +1,96 @@
+/*****************************************************************************
+ *
+ *  XVID MPEG-4 VIDEO CODEC
+ *  - cbp function (zero block flags) -
+ *
+ *  Copyright (C) 2001-2002 - Edouard Gomez <ed.gomez@free.fr>
+ *
+ *  This file is part of XviD, a free MPEG-4 video encoder/decoder
+ *
+ *  XviD is free software; you can redistribute it and/or modify it
+ *  under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
+ *
+ *  Under section 8 of the GNU General Public License, the copyright
+ *  holders of XVID explicitly forbid distribution in the following
+ *  countries:
+ *
+ *    - Japan
+ *    - United States of America
+ *
+ *  Linking XviD statically or dynamically with other modules is making a
+ *  combined work based on XviD.  Thus, the terms and conditions of the
+ *  GNU General Public License cover the whole combination.
+ *
+ *  As a special exception, the copyright holders of XviD give you
+ *  permission to link XviD with independent modules that communicate with
+ *  XviD solely through the VFW1.1 and DShow interfaces, regardless of the
+ *  license terms of these independent modules, and to copy and distribute
+ *  the resulting combined work under terms of your choice, provided that
+ *  every copy of the combined work is accompanied by a complete copy of
+ *  the source code of XviD (the version of XviD used to produce the
+ *  combined work), being distributed under the terms of the GNU General
+ *  Public License plus this exception.  An independent module is a module
+ *  which is not derived from or based on XviD.
+ *
+ *  Note that people who make modified versions of XviD are not obligated
+ *  to grant this special exception for their modified versions; it is
+ *  their choice whether to do so.  The GNU General Public License gives
+ *  permission to release a modified version without this exception; this
+ *  exception also makes it possible to release a modified version which
+ *  carries forward this exception.
+ *
+ * $Id: cbp.c,v 1.9 2002-12-28 13:53:08 edgomez Exp $
+ *
+ ****************************************************************************/
+
 #include "../portab.h"
 #include "cbp.h"
 
+/*****************************************************************************
+ * Global function pointer
+ ****************************************************************************/
+
 cbpFuncPtr calc_cbp;
+
+/*****************************************************************************
+ * Functions
+ ****************************************************************************/
 
 /*
  * Returns a field of bits that indicates non zero ac blocks
  * for this macro block
  */
-
-/* naive C */
-uint32_t
-calc_cbp_plain(const int16_t codes[6 * 64])
-{
-	int i, j;
-	uint32_t cbp = 0;
-
-	for (i = 0; i < 6; i++) {
-		for (j=1; j<64;j++) {
-			if (codes[64*i+j]) {
-            	cbp |= 1 << (5-i);
-				break;
-			}
-		}
-	}
-	return cbp;
-}
-
-/* optimized C */
 uint32_t
 calc_cbp_c(const int16_t codes[6 * 64])
 {
-	unsigned int i=6;
+	uint32_t i, j;
 	uint32_t cbp = 0;
 
-/* uses fixed relation: 4*codes = 1*codes64 */
-/* if prototype is changed (e.g. from int16_t to something like int32) this routine 
-   has to be changed! */
-
-	do  {
-		uint64_t *codes64 = (uint64_t*)codes;	/* the compiler doesn't really make this */
-		uint32_t *codes32 = (uint32_t*)codes;	/* variables, just "addressing modes" */
-
-		cbp += cbp; 
-        if (codes[1] || codes32[1]) {
-			cbp++;
-		}
-        else if (codes64[1] | codes64[2] | codes64[3]) {
-			cbp++;
-		}
-        else if (codes64[4] | codes64[5] | codes64[6] | codes64[7]) {
-			cbp++;
-		}
-        else if (codes64[8] | codes64[9] | codes64[10] | codes64[11]) {
-			cbp++;
-		}
-        else if (codes64[12] | codes64[13] | codes64[14] | codes64[15]) {
-			cbp++;
-		}
-		codes += 64;
-		i--;
-    } while (i != 0);
-
-	return cbp;
-}
-
-
-
-
-/* older code maybe better on some plattforms? */
-#if (0==1)
-	for (i = 5; i >= 0; i--) {
-		if (codes[1] | codes[2] | codes[3])
-                        cbp |= 1 << i;
-		else {
-			for (j = 4; j <= 56; j+=4) 	/* [60],[61],[62],[63] are last */
-				if (codes[j] | codes[j+1] | codes[j+2] | codes[j+3]) {
-				cbp |= 1 << i;
+	for (i = 0; i < 6; i++) {
+		for (j = 1; j < 61; j += 4) {
+			if (codes[i * 64 + j] | codes[i * 64 + j + 1] |
+				codes[i * 64 + j + 2] | codes[i * 64 + j + 3]) {
+				cbp |= 1 << (5 - i);
 				break;
 			}
 		}
-		codes += 64;
+
+		if (codes[i * 64 + j] | codes[i * 64 + j + 1] | codes[i * 64 + j + 2])
+			cbp |= 1 << (5 - i);
+
 	}
 
 	return cbp;
-#endif
+
+}

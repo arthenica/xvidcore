@@ -19,7 +19,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid_stat.c,v 1.22 2003-02-22 21:37:49 chl Exp $
+ * $Id: xvid_stat.c,v 1.19 2003-02-09 19:32:52 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -853,7 +853,7 @@ static int enc_init(int use_assembler)
 
 	if(use_assembler) {
 
-#ifdef ARCH_IS_IA64
+#ifdef ARCH_IA64
 		xinit.cpu_flags = XVID_CPU_FORCE | XVID_CPU_IA64;
 #else
 		xinit.cpu_flags = 0;
@@ -915,7 +915,7 @@ static int enc_main(unsigned char* image, unsigned char* bitstream,
 	xframe.length = -1; 	/* this is written by the routine */
 
 	xframe.image = image;
-	xframe.colorspace = XVID_CSP_I420;	/* defined in <xvid.h> */
+	xframe.colorspace = XVID_CSP_YV12;	/* defined in <xvid.h> */
 
 	xframe.intra = -1; /* let the codec decide between I-frame (1) and P-frame (0) */
 
@@ -997,7 +997,7 @@ static int dec_main(unsigned char *m4v_buffer, unsigned char *out_buffer,
 	xframe.length = m4v_size;
 	xframe.image = out_buffer;
 	xframe.stride = XDIM;
-	xframe.colorspace = XVID_CSP_I420;             /* XVID_CSP_USER is fastest (no memcopy involved) */
+	xframe.colorspace = XVID_CSP_YV12;             /* XVID_CSP_USER is fastest (no memcopy involved) */
 
 	xerr = xvid_decore(dec_handle, XVID_DEC_DECODE, &xframe, NULL);
 
