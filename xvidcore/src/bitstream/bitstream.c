@@ -20,7 +20,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: bitstream.c,v 1.45 2004-07-09 14:52:56 syskin Exp $
+ * $Id: bitstream.c,v 1.42.2.5 2004-07-09 14:54:28 syskin Exp $
  *
  ****************************************************************************/
 

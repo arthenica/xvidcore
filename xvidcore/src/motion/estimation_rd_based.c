@@ -20,7 +20,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: estimation_rd_based.c,v 1.8 2004-07-18 12:23:45 syskin Exp $
+ * $Id: estimation_rd_based.c,v 1.2.2.2 2004-06-04 11:54:42 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -56,7 +56,6 @@ Block_CalcBits(	int16_t * const coeff,
 				uint32_t * cbp,
 				const int block,
 				const uint16_t * scan_table,
-				const unsigned int lambda,
 				const uint16_t * mpeg_quant_matrices)
 {
 	int sum;
@@ -93,7 +92,7 @@ Block_CalcBits(	int16_t * const coeff,
 	}
 
 
-	return bits + (lambda*distortion)/(quant*quant);
+	return bits + (LAMBDA*distortion)/(quant*quant);
 }
 
 static __inline unsigned int
@@ -110,7 +109,6 @@ Block_CalcBitsIntra(MACROBLOCK * pMB,
 					const int quant_type,
 					unsigned int bits[2],
 					unsigned int cbp[2],
-					unsigned int lambda,
 					const uint16_t * mpeg_quant_matrices)
 {
 	int direction;
@@ -171,7 +169,7 @@ Block_CalcBitsIntra(MACROBLOCK * pMB,
 
 	distortion = sse8_16bit(coeff, dqcoeff, 8*sizeof(int16_t));
 
-	return (lambda*distortion)/(quant*quant);
+	return (LAMBDA*distortion)/(quant*quant);
 }
 
 
@@ -203,7 +201,7 @@ CheckCandidateRD16(const int x, const int y, SearchData * const data, const unsi
 	for(i = 0; i < 4; i++) {
 		int s = 8*((i&1) + (i>>1)*data->iEdgedWidth);
 		transfer_8to16subro(in, data->Cur + s, ptr + s, data->iEdgedWidth);
-		rd += data->temp[i] = Block_CalcBits(coeff, in, data->dctSpace + 128, data->iQuant, data->quant_type, &cbp, i, data->scan_table, data->lambda[i], data->mpeg_quant_matrices);
+		rd += data->temp[i] = Block_CalcBits(coeff, in, data->dctSpace + 128, data->iQuant, data->quant_type, &cbp, i, data->scan_table, data->mpeg_quant_matrices);
 	}
 
 	rd += t = BITS_MULT*d_mv_bits(x, y, data->predMV, data->iFcode, data->qpel^data->qpel_precision, 0);
@@ -228,13 +226,13 @@ CheckCandidateRD16(const int x, const int y, SearchData * const data, const unsi
 	/* chroma U */
 	ptr = interpolate8x8_switch2(data->RefQ, data->RefP[4], 0, 0, xc, yc, data->iEdgedWidth/2, data->rounding);
 	transfer_8to16subro(in, data->CurU, ptr, data->iEdgedWidth/2);
-	rd += Block_CalcBits(coeff, in, data->dctSpace + 128, data->iQuant, data->quant_type, &cbp, 4, data->scan_table, data->lambda[4], data->mpeg_quant_matrices);
+	rd += Block_CalcBits(coeff, in, data->dctSpace + 128, data->iQuant, data->quant_type, &cbp, 4, data->scan_table, data->mpeg_quant_matrices);
 	if (rd >= data->iMinSAD[0]) return;
 
 	/* chroma V */
 	ptr = interpolate8x8_switch2(data->RefQ, data->RefP[5], 0, 0, xc, yc, data->iEdgedWidth/2, data->rounding);
 	transfer_8to16subro(in, data->CurV, ptr, data->iEdgedWidth/2);
-	rd += Block_CalcBits(coeff, in, data->dctSpace + 128, data->iQuant, data->quant_type, &cbp, 5, data->scan_table, data->lambda[5], data->mpeg_quant_matrices);
+	rd += Block_CalcBits(coeff, in, data->dctSpace + 128, data->iQuant, data->quant_type, &cbp, 5, data->scan_table, data->mpeg_quant_matrices);
 
 	rd += BITS_MULT*mcbpc_inter_tab[(MODE_INTER & 7) | ((cbp & 3) << 3)].len;
 
@@ -268,7 +266,7 @@ CheckCandidateRD8(const int x, const int y, SearchData * const data, const unsig
 	}
 
 	transfer_8to16subro(in, data->Cur, ptr, data->iEdgedWidth);
-	rd = Block_CalcBits(coeff, in, data->dctSpace + 128, data->iQuant, data->quant_type, &cbp, 5, data->scan_table, data->lambda[0], data->mpeg_quant_matrices);
+	rd = Block_CalcBits(coeff, in, data->dctSpace + 128, data->iQuant, data->quant_type, &cbp, 5, data->scan_table, data->mpeg_quant_matrices);
 	rd += BITS_MULT*d_mv_bits(x, y, data->predMV, data->iFcode, data->qpel^data->qpel_precision, 0);
 
 	if (rd < data->iMinSAD[0]) {
@@ -315,7 +313,7 @@ findRD_inter(SearchData * const Data,
 		xvid_me_SquareSearch(Data->currentMV->x, Data->currentMV->y, Data, 255, CheckCandidateRD16);
 
 	if (MotionFlags&XVID_ME_HALFPELREFINE16_RD)
-		xvid_me_SubpelRefine(Data->currentMV[0], Data, CheckCandidateRD16, 0);
+		xvid_me_SubpelRefine(Data, CheckCandidateRD16);
 
 	if (Data->qpel) {
 		if (MotionFlags&(XVID_ME_EXTSEARCH_RD | XVID_ME_HALFPELREFINE16_RD)) { /* there was halfpel-precision search */
@@ -329,12 +327,8 @@ findRD_inter(SearchData * const Data,
 			get_range(&Data->min_dx, &Data->max_dx, &Data->min_dy, &Data->max_dy, x, y, 4,
 					pParam->width, pParam->height, Data->iFcode, 2, 0);
 		}
-		if (MotionFlags & XVID_ME_QUARTERPELREFINE16_RD) {
-			if (MotionFlags & XVID_ME_FASTREFINE16)
-				FullRefine_Fast(Data, CheckCandidateRD16, 0);
-			else 
-				xvid_me_SubpelRefine(Data->currentQMV[0], Data, CheckCandidateRD16, 0);
-		}
+		if (MotionFlags&XVID_ME_QUARTERPELREFINE16_RD)
+			xvid_me_SubpelRefine(Data, CheckCandidateRD16);
 	}
 
 	if (MotionFlags&XVID_ME_CHECKPREDICTION_RD) { /* let's check vector equal to prediction */
@@ -372,7 +366,6 @@ findRD_inter4v(SearchData * const Data,
 		Data8->RefP[1] = Data->RefP[1] + 8*((i&1) + (i>>1)*Data->iEdgedWidth);
 		Data8->RefP[3] = Data->RefP[3] + 8*((i&1) + (i>>1)*Data->iEdgedWidth);
 		*Data8->cbp = (Data->cbp[1] & (1<<(5-i))) ? 1:0; /* copy corresponding cbp bit */
-		Data8->lambda[0] = Data->lambda[i];
 
 		if(Data->qpel) {
 			Data8->predMV = get_qpmv2(pMBs, pParam->mb_width, 0, x, y, i);
@@ -398,14 +391,10 @@ findRD_inter4v(SearchData * const Data,
 		}
 
 		if (Data8->qpel) {
-			int bsad = Data8->iMinSAD[0];
-			int bx = Data8->currentQMV->x;
-			int by = Data8->currentQMV->y;
-
-			Data8->currentMV->x = Data8->currentQMV->x/2;
-			Data8->currentMV->y = Data8->currentQMV->y/2;
-
 			if (MotionFlags&XVID_ME_HALFPELREFINE8_RD || (MotionFlags&XVID_ME_EXTSEARCH8 && MotionFlags&XVID_ME_EXTSEARCH_RD)) { /* halfpixel motion search follows */
+				int32_t s = *Data8->iMinSAD;
+				Data8->currentMV->x = Data8->currentQMV->x/2;
+				Data8->currentMV->y = Data8->currentQMV->y/2;
 				Data8->qpel_precision = 0;
 				get_range(&Data8->min_dx, &Data8->max_dx, &Data8->min_dy, &Data8->max_dy, 2*x + (i&1), 2*y + (i>>1), 3,
 							pParam->width, pParam->height, Data8->iFcode - 1, 1, 0);
@@ -417,12 +406,11 @@ findRD_inter4v(SearchData * const Data,
 					xvid_me_SquareSearch(Data8->currentMV->x, Data8->currentMV->x, Data8, 255, CheckCandidateRD8);
 
 				if (MotionFlags & XVID_ME_HALFPELREFINE8_RD)
-					xvid_me_SubpelRefine(Data->currentMV[0], Data8, CheckCandidateRD8, 0);
+					xvid_me_SubpelRefine(Data8, CheckCandidateRD8);
 
-				if(bsad > *Data8->iMinSAD) { /* we have found a better match */
-					bx = Data8->currentQMV->x = 2*Data8->currentMV->x;
-					by = Data8->currentQMV->y = 2*Data8->currentMV->y;
-					bsad = Data8->iMinSAD[0];
+				if(s > *Data8->iMinSAD) { /* we have found a better match */
+					Data8->currentQMV->x = 2*Data8->currentMV->x;
+					Data8->currentQMV->y = 2*Data8->currentMV->y;
 				}
 
 				Data8->qpel_precision = 1;
@@ -430,19 +418,8 @@ findRD_inter4v(SearchData * const Data,
 							pParam->width, pParam->height, Data8->iFcode, 2, 0);
 
 			}
-
-			if (MotionFlags & XVID_ME_QUARTERPELREFINE8_RD) {
-				if (MotionFlags & XVID_ME_FASTREFINE8)
-					FullRefine_Fast(Data8, CheckCandidateRD8, 0);
-				else xvid_me_SubpelRefine(Data->currentQMV[0], Data8, CheckCandidateRD8, 0);
-			}
-
-			if (bsad <= Data->iMinSAD[0]) { 
-				/* we have not found a better match */
-				Data8->iMinSAD[0] = bsad;
-				Data8->currentQMV->x = bx;
-				Data8->currentQMV->y = by;
-			}
+			if (MotionFlags & XVID_ME_QUARTERPELREFINE8_RD)
+				xvid_me_SubpelRefine(Data8, CheckCandidateRD8);
 
 		} else { /* not qpel */
 
@@ -450,7 +427,7 @@ findRD_inter4v(SearchData * const Data,
 				xvid_me_SquareSearch(Data8->currentMV->x, Data8->currentMV->x, Data8, 255, CheckCandidateRD8);
 
 			if (MotionFlags & XVID_ME_HALFPELREFINE8_RD)
-				xvid_me_SubpelRefine(Data->currentMV[0], Data8, CheckCandidateRD8, 0); /* halfpel refinement */
+				xvid_me_SubpelRefine(Data8, CheckCandidateRD8); /* halfpel refinement */
 		}
 
 		/* checking vector equal to predicion */
@@ -491,14 +468,14 @@ findRD_inter4v(SearchData * const Data,
 	/* chroma U */
 	ptr = interpolate8x8_switch2(Data->RefQ + 64, Data->RefP[4], 0, 0, sumx, sumy, Data->iEdgedWidth/2, Data->rounding);
 	transfer_8to16subro(in, Data->CurU, ptr, Data->iEdgedWidth/2);
-	bits += Block_CalcBits(coeff, in, Data->dctSpace + 128, Data->iQuant, Data->quant_type, &cbp, 4, Data->scan_table, Data->lambda[4], Data->mpeg_quant_matrices);
+	bits += Block_CalcBits(coeff, in, Data->dctSpace + 128, Data->iQuant, Data->quant_type, &cbp, 4, Data->scan_table, Data->mpeg_quant_matrices);
 
 	if (bits >= *Data->iMinSAD) return bits;
 
 	/* chroma V */
 	ptr = interpolate8x8_switch2(Data->RefQ + 64, Data->RefP[5], 0, 0, sumx, sumy, Data->iEdgedWidth/2, Data->rounding);
 	transfer_8to16subro(in, Data->CurV, ptr, Data->iEdgedWidth/2);
-	bits += Block_CalcBits(coeff, in, Data->dctSpace + 128, Data->iQuant, Data->quant_type, &cbp, 5, Data->scan_table, Data->lambda[5], Data->mpeg_quant_matrices);
+	bits += Block_CalcBits(coeff, in, Data->dctSpace + 128, Data->iQuant, Data->quant_type, &cbp, 5, Data->scan_table, Data->mpeg_quant_matrices);
 
 	bits += BITS_MULT*mcbpc_inter_tab[(MODE_INTER4V & 7) | ((cbp & 3) << 3)].len;
 
@@ -524,7 +501,7 @@ findRD_intra(SearchData * const Data, MACROBLOCK * pMB,
 		
 
 		distortion = Block_CalcBitsIntra(pMB, x, y, mb_width, i, in, coeff, dqcoeff,
-								predictors[i], iQuant, Data->quant_type, bits, cbp, Data->lambda[i], Data->mpeg_quant_matrices);
+								predictors[i], iQuant, Data->quant_type, bits, cbp, Data->mpeg_quant_matrices);
 		bits1 += distortion + BITS_MULT * bits[0];
 		bits2 += distortion + BITS_MULT * bits[1];
 
@@ -538,7 +515,7 @@ findRD_intra(SearchData * const Data, MACROBLOCK * pMB,
 	/*chroma U */
 	transfer_8to16copy(in, Data->CurU, Data->iEdgedWidth/2);
 	distortion = Block_CalcBitsIntra(pMB, x, y, mb_width, 4, in, coeff, dqcoeff,
-									predictors[4], iQuant, Data->quant_type, bits, cbp, Data->lambda[4], Data->mpeg_quant_matrices);
+									predictors[4], iQuant, Data->quant_type, bits, cbp, Data->mpeg_quant_matrices);
 	bits1 += distortion + BITS_MULT * bits[0];
 	bits2 += distortion + BITS_MULT * bits[1];
 
@@ -548,7 +525,7 @@ findRD_intra(SearchData * const Data, MACROBLOCK * pMB,
 	/* chroma V */
 	transfer_8to16copy(in, Data->CurV, Data->iEdgedWidth/2);
 	distortion = Block_CalcBitsIntra(pMB, x, y, mb_width, 5, in, coeff, dqcoeff,
-									predictors[5], iQuant, Data->quant_type, bits, cbp, Data->lambda[5], Data->mpeg_quant_matrices);
+									predictors[5], iQuant, Data->quant_type, bits, cbp, Data->mpeg_quant_matrices);
 
 	bits1 += distortion + BITS_MULT * bits[0];
 	bits2 += distortion + BITS_MULT * bits[1];
@@ -572,7 +549,7 @@ findRD_gmc(SearchData * const Data, const IMAGE * const vGMC, const int x, const
 	for(i = 0; i < 4; i++) {
 		int s = 8*((i&1) + (i>>1)*Data->iEdgedWidth);
 		transfer_8to16subro(in, Data->Cur + s, vGMC->y + s + 16*(x+y*Data->iEdgedWidth), Data->iEdgedWidth);
-		bits += Block_CalcBits(coeff, in, Data->dctSpace + 128, Data->iQuant, Data->quant_type, &cbp, i, Data->scan_table, Data->lambda[i], Data->mpeg_quant_matrices);
+		bits += Block_CalcBits(coeff, in, Data->dctSpace + 128, Data->iQuant, Data->quant_type, &cbp, i, Data->scan_table, Data->mpeg_quant_matrices);
 		if (bits >= Data->iMinSAD[0]) return bits;
 	}
 
@@ -580,13 +557,13 @@ findRD_gmc(SearchData * const Data, const IMAGE * const vGMC, const int x, const
 
 	/*chroma U */
 	transfer_8to16subro(in, Data->CurU, vGMC->u + 8*(x+y*(Data->iEdgedWidth/2)), Data->iEdgedWidth/2);
-	bits += Block_CalcBits(coeff, in, Data->dctSpace + 128, Data->iQuant, Data->quant_type, &cbp, 4, Data->scan_table, Data->lambda[4], Data->mpeg_quant_matrices);
+	bits += Block_CalcBits(coeff, in, Data->dctSpace + 128, Data->iQuant, Data->quant_type, &cbp, 4, Data->scan_table, Data->mpeg_quant_matrices);
 
 	if (bits >= Data->iMinSAD[0]) return bits;
 
 	/* chroma V */
 	transfer_8to16subro(in, Data->CurV , vGMC->v + 8*(x+y*(Data->iEdgedWidth/2)), Data->iEdgedWidth/2);
-	bits += Block_CalcBits(coeff, in, Data->dctSpace + 128, Data->iQuant, Data->quant_type, &cbp, 5, Data->scan_table, Data->lambda[5], Data->mpeg_quant_matrices);
+	bits += Block_CalcBits(coeff, in, Data->dctSpace + 128, Data->iQuant, Data->quant_type, &cbp, 5, Data->scan_table, Data->mpeg_quant_matrices);
 
 	bits += BITS_MULT*mcbpc_inter_tab[(MODE_INTER & 7) | ((cbp & 3) << 3)].len;
 
@@ -626,11 +603,6 @@ xvid_me_ModeDecision_RD(SearchData * const Data,
 	for (i = 0; i < 5; i++) {
 		Data->iMinSAD[i] = 256*4096;
 		backup[i] = v[i];
-	}
-
-	for (i = 0; i < 6; i++) {
-		/* HVS models, anyone ? */
-		Data->lambda[i] = LAMBDA;
 	}
 
 	min_rd = findRD_inter(Data, x, y, pParam, MotionFlags);
@@ -735,11 +707,6 @@ xvid_me_ModeDecision_Fast(SearchData * const Data,
 						scan_tables[2] : scan_tables[0];
 
 	pMB->mcsel = 0;
-
-	for (i = 0; i < 6; i++) {
-		/* HVS models, anyone ? */
-		Data->lambda[i] = LAMBDA;
-	}
 
 	/* INTER <-> INTER4V decision */
 	if ((Data->iMinSAD[0] + 75 < Data->iMinSAD[1] +

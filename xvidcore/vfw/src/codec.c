@@ -643,8 +643,6 @@ static void apply_zone_modifiers(xvid_enc_frame_t * frame, CONFIG * config, int 
 }
 
 
-#define CALC_BI_STRIDE(width,bitcount)  ((((width * bitcount) + 31) & ~31) >> 3)
-
 LRESULT compress(CODEC * codec, ICCOMPRESS * icc)
 {
 	BITMAPINFOHEADER * inhdr = icc->lpbiInput;
@@ -713,10 +711,6 @@ LRESULT compress(CODEC * codec, ICCOMPRESS * icc)
 	frame.vop_flags |= XVID_VOP_HALFPEL;
 	frame.vop_flags |= XVID_VOP_HQACPRED;
 
-	if (codec->config.interlacing && codec->config.tff)
-		frame.vop_flags |= XVID_VOP_TOPFIELDFIRST;
-
-
 	if (codec->config.vop_debug) 
 		frame.vop_flags |= XVID_VOP_DEBUG;
 
@@ -741,9 +735,6 @@ LRESULT compress(CODEC * codec, ICCOMPRESS * icc)
 						XVID_ME_BFRAME_EARLYSTOP;
 
 	frame.motion |= pmvfast_presets[codec->config.motion_search];
-
-	if (codec->config.vhq_bframe) frame.vop_flags |= XVID_VOP_RD_BVOP;
-
 
 	switch (codec->config.vhq_mode)
 	{
@@ -781,7 +772,7 @@ LRESULT compress(CODEC * codec, ICCOMPRESS * icc)
 	}
 
 	frame.input.plane[0] = icc->lpInput;
-	frame.input.stride[0] = CALC_BI_STRIDE(icc->lpbiInput->biWidth, icc->lpbiInput->biBitCount);
+	frame.input.stride[0] = (((icc->lpbiInput->biWidth * icc->lpbiInput->biBitCount) + 31) & ~31) >> 3;
 
 	if ((frame.input.csp = get_colorspace(inhdr)) == XVID_CSP_NULL)
 		return ICERR_BADFORMAT;
@@ -934,8 +925,7 @@ LRESULT decompress_get_format(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO 
 	outhdr->biPlanes = 1;
 	outhdr->biBitCount = 24;
 	outhdr->biCompression = BI_RGB;	/* sonic foundry vegas video v3 only supports BI_RGB */
-	outhdr->biSizeImage = outhdr->biHeight * CALC_BI_STRIDE(outhdr->biWidth, outhdr->biBitCount);
-
+	outhdr->biSizeImage = outhdr->biWidth * outhdr->biHeight * outhdr->biBitCount / 8;
 	outhdr->biXPelsPerMeter = 0;
 	outhdr->biYPelsPerMeter = 0;
 	outhdr->biClrUsed = 0;
@@ -989,11 +979,9 @@ LRESULT decompress_begin(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * lpb
 
 	RegOpenKeyEx(XVID_REG_KEY, XVID_REG_PARENT "\\" XVID_REG_CHILD, 0, KEY_READ, &hKey);
 
-	REG_GET_N("Brightness", pp_brightness, 0);
 	REG_GET_N("Deblock_Y",  pp_dy, 0)
 	REG_GET_N("Deblock_UV", pp_duv, 0)
-	REG_GET_N("Dering_Y",  pp_dry, 0)
-	REG_GET_N("Dering_UV", pp_druv, 0)
+	REG_GET_N("Dering",  pp_dr, 0)
 	REG_GET_N("FilmEffect", pp_fe, 0)
 
 	RegCloseKey(hKey);
@@ -1041,13 +1029,13 @@ LRESULT decompress(CODEC * codec, ICDECOMPRESS * icd)
 
 		convert.input.csp = get_colorspace(icd->lpbiInput);
 		convert.input.plane[0] = icd->lpInput;
-		convert.input.stride[0] = CALC_BI_STRIDE(icd->lpbiInput->biWidth, icd->lpbiInput->biBitCount);
+		convert.input.stride[0] = (((icd->lpbiInput->biWidth *icd->lpbiInput->biBitCount) + 31) & ~31) >> 3;  
 		if (convert.input.csp == XVID_CSP_I420 || convert.input.csp == XVID_CSP_YV12)
 			convert.input.stride[0] = (convert.input.stride[0]*2)/3;
 
 		convert.output.csp = get_colorspace(icd->lpbiOutput);
 		convert.output.plane[0] = icd->lpOutput;
-		convert.output.stride[0] = CALC_BI_STRIDE(icd->lpbiOutput->biWidth, icd->lpbiOutput->biBitCount);
+		convert.output.stride[0] = (((icd->lpbiOutput->biWidth *icd->lpbiOutput->biBitCount) + 31) & ~31) >> 3;
 		if (convert.output.csp == XVID_CSP_I420 || convert.output.csp == XVID_CSP_YV12)
 			convert.output.stride[0] = (convert.output.stride[0]*2)/3;
 
@@ -1077,7 +1065,7 @@ LRESULT decompress(CODEC * codec, ICDECOMPRESS * icd)
 			return ICERR_BADFORMAT;
 		}
 		frame.output.plane[0] = icd->lpOutput;
-		frame.output.stride[0] = CALC_BI_STRIDE(icd->lpbiOutput->biWidth, icd->lpbiOutput->biBitCount);
+		frame.output.stride[0] = (((icd->lpbiOutput->biWidth * icd->lpbiOutput->biBitCount) + 31) & ~31) >> 3;
 		if (frame.output.csp == XVID_CSP_I420 || frame.output.csp == XVID_CSP_YV12)
 			frame.output.stride[0] = (frame.output.stride[0]*2)/3;
 	}
@@ -1088,11 +1076,8 @@ LRESULT decompress(CODEC * codec, ICDECOMPRESS * icd)
 
 	if (pp_dy)frame.general |= XVID_DEBLOCKY;
 	if (pp_duv) frame.general |= XVID_DEBLOCKUV;
-	if (pp_dry) frame.general |= XVID_DERINGY; 
-	if (pp_druv) frame.general |= XVID_DERINGUV; 
+/*	if (pp_dr) frame.general |= XVID_DERING; */
 	if (pp_fe) frame.general |= XVID_FILMEFFECT;
-
-	frame.brightness = pp_brightness;
 
 	switch (codec->xvid_decore_func(codec->dhandle, XVID_DEC_DECODE, &frame, NULL)) 
 	{

@@ -20,7 +20,7 @@
 ; *  along with this program; if not, write to the Free Software
 ; *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 ; *
-; * $Id: sad_mmx.asm,v 1.16 2004-08-29 10:02:38 edgomez Exp $
+; * $Id: sad_mmx.asm,v 1.12.2.1 2004-07-24 11:38:12 edgomez Exp $
 ; *
 ; ***************************************************************************/
 
@@ -28,19 +28,10 @@ BITS 32
 
 %macro cglobal 1
 	%ifdef PREFIX
-		%ifdef MARK_FUNCS
-			global _%1:function %1.endfunc-%1
-			%define %1 _%1:function %1.endfunc-%1
-		%else
-			global _%1
-			%define %1 _%1
-		%endif
+		global _%1
+		%define %1 _%1
 	%else
-		%ifdef MARK_FUNCS
-			global %1:function %1.endfunc-%1
-		%else
-			global %1
-		%endif
+		global %1
 	%endif
 %endmacro
 
@@ -279,7 +270,6 @@ cglobal sad16bi_mmx
 cglobal sad8bi_mmx
 cglobal dev16_mmx
 cglobal sse8_16bit_mmx
-cglobal sse8_8bit_mmx
 	
 ;-----------------------------------------------------------------------------
 ;
@@ -328,7 +318,6 @@ sad16_mmx:
   movd eax, mm6
 
   ret
-.endfunc
 
 ;-----------------------------------------------------------------------------
 ;
@@ -361,7 +350,6 @@ sad8_mmx:
   movd eax, mm6
 
   ret
-.endfunc
 
 ;-----------------------------------------------------------------------------
 ;
@@ -452,7 +440,6 @@ sad16v_mmx:
   pop ebx
 
   ret
-.endfunc
 
 ;-----------------------------------------------------------------------------
 ;
@@ -517,7 +504,6 @@ sad16bi_mmx:
   pop ebx
 
   ret
-.endfunc
 
 ;-----------------------------------------------------------------------------
 ;
@@ -556,7 +542,6 @@ sad8bi_mmx:
   movd eax, mm6
   pop ebx
   ret
-.endfunc
 
 ;-----------------------------------------------------------------------------
 ;
@@ -636,7 +621,6 @@ dev16_mmx:
   movd eax, mm6
 
   ret
-.endfunc
 
 ;-----------------------------------------------------------------------------
 ;
@@ -646,7 +630,7 @@ dev16_mmx:
 ;
 ;-----------------------------------------------------------------------------
 
-%macro ROW_SSE_16bit_MMX 2
+%macro ROW_SSE_MMX 2
   movq mm0, [%1]
   movq mm1, [%1+8]
   psubw mm0, [%2]
@@ -655,7 +639,7 @@ dev16_mmx:
   pmaddwd mm1, mm1
   paddd mm2, mm0
   paddd mm2, mm1
-%endmacro
+%endmacro	
 	
 sse8_16bit_mmx:
   push esi
@@ -670,11 +654,30 @@ sse8_16bit_mmx:
   pxor mm2, mm2
 
   ;; Let's go
-%rep 8
-  ROW_SSE_16bit_MMX esi, edi
+  ROW_SSE_MMX esi, edi
   lea esi, [esi+edx]
   lea edi, [edi+edx]
-%endrep
+  ROW_SSE_MMX esi, edi
+  lea esi, [esi+edx]
+  lea edi, [edi+edx]
+  ROW_SSE_MMX esi, edi
+  lea esi, [esi+edx]
+  lea edi, [edi+edx]
+  ROW_SSE_MMX esi, edi
+  lea esi, [esi+edx]
+  lea edi, [edi+edx]
+  ROW_SSE_MMX esi, edi
+  lea esi, [esi+edx]
+  lea edi, [edi+edx]
+  ROW_SSE_MMX esi, edi
+  lea esi, [esi+edx]
+  lea edi, [edi+edx]
+  ROW_SSE_MMX esi, edi
+  lea esi, [esi+edx]
+  lea edi, [edi+edx]
+  ROW_SSE_MMX esi, edi
+  lea esi, [esi+edx]
+  lea edi, [edi+edx]
 
   ;; Finish adding each dword of the accumulator
   movq mm3, mm2
@@ -686,70 +689,3 @@ sse8_16bit_mmx:
   pop edi
   pop esi
   ret
-.endfunc
-
-;-----------------------------------------------------------------------------
-;
-; uint32_t sse8_8bit_mmx(const int8_t *b1,
-;                        const int8_t *b2,
-;                        const uint32_t stride);
-;
-;-----------------------------------------------------------------------------
-
-%macro ROW_SSE_8bit_MMX 2
-  movq mm0, [%1] ; load a row
-  movq mm2, [%2] ; load a row
-
-  movq mm1, mm0  ; copy row
-  movq mm3, mm2  ; copy row
-
-  punpcklbw mm0, mm7 ; turn the 4low elements into 16bit
-  punpckhbw mm1, mm7 ; turn the 4high elements into 16bit
-
-  punpcklbw mm2, mm7 ; turn the 4low elements into 16bit
-  punpckhbw mm3, mm7 ; turn the 4high elements into 16bit
-
-  psubw mm0, mm2 ; low  part of src-dst
-  psubw mm1, mm3 ; high part of src-dst
-
-  pmaddwd mm0, mm0 ; compute the square sum
-  pmaddwd mm1, mm1 ; compute the square sum
-
-  paddd mm6, mm0 ; add to the accumulator
-  paddd mm6, mm1 ; add to the accumulator
-%endmacro
-
-sse8_8bit_mmx:
-  push esi
-  push edi
-
-  ;; Load the function params
-  mov esi, [esp+8+4]
-  mov edi, [esp+8+8]
-  mov edx, [esp+8+12]
-
-  ;; Reset the sse accumulator
-  pxor mm6, mm6
-
-  ;; Used to interleave 8bit data with 0x00 values
-  pxor mm7, mm7
-
-  ;; Let's go
-%rep 8
-  ROW_SSE_8bit_MMX esi, edi
-  lea esi, [esi+edx]
-  lea edi, [edi+edx]
-%endrep
-
-  ;; Finish adding each dword of the accumulator
-  movq mm7, mm6
-  psrlq mm6, 32
-  paddd mm6, mm7
-  movd eax, mm6
-
-  ;; All done
-  pop edi
-  pop esi
-  ret
-.endfunc
-

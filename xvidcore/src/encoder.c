@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: encoder.c,v 1.108 2004-07-18 15:24:05 edgomez Exp $
+ * $Id: encoder.c,v 1.102.2.7 2004-07-18 12:03:19 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -1868,7 +1868,7 @@ FrameCodeP(Encoder * pEnc,
 #endif
 	if (current->sStat.kblks + current->sStat.mblks <=
 		(pParam->frame_drop_ratio * mb_width * mb_height) / 100 &&
-		( (pEnc->bframenum_head >= pEnc->bframenum_tail) || !(pEnc->mbParam.global_flags & XVID_GLOBAL_CLOSED_GOP)) )
+		pEnc->mbParam.max_bframes == 0)
 	{
 		current->sStat.kblks = current->sStat.mblks = 0;
 		current->sStat.ublks = mb_width * mb_height;

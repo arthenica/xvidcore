@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: estimation.h,v 1.6 2004-07-18 11:48:08 syskin Exp $
+ * $Id: estimation.h,v 1.2 2004-03-22 22:36:24 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -47,7 +47,7 @@
 
 #define BITS_MULT				16
 
-#define INITIAL_SKIP_THRESH		6
+#define INITIAL_SKIP_THRESH		10
 #define FINAL_SKIP_THRESH		50
 #define MAX_SAD00_FOR_SKIP		20
 #define MAX_CHROMA_SAD_FOR_SKIP	22
@@ -78,6 +78,8 @@ typedef struct
 	int temp[4];				/* temporary space */
 	unsigned int dir;			/* 'direction', set when better vector is found */
 	int chromaX, chromaY, chromaSAD; /* info to make ChromaSAD faster */
+	VECTOR currentQMV2;			/* extra vector for SubpelRefine_fast */
+	int32_t iMinSAD2;			/* extra SAD value for SubpelRefine_fast */
 
 	/* general fields */
 	int max_dx, min_dx, max_dy, min_dy; /* maximum range */
@@ -92,7 +94,7 @@ typedef struct
 	uint32_t lambda8;			/* as above - for inter4v mode */
 	uint32_t iEdgedWidth;		/* picture's stride */
 	uint32_t iFcode;			/* current fcode */
-
+	
 	int qpel;					/* if we're coding in qpel mode */
 	int qpel_precision;			/* if X and Y are in qpel precision (refinement probably) */
 	int chroma;					/* should we include chroma SAD? */
@@ -102,7 +104,6 @@ typedef struct
 	const uint8_t * b_RefP[6];	/* backward reference pictures - N, V, H, HV, cU, cV */
 	VECTOR bpredMV;				/* backward prediction - used interpolate mode only */
 	uint32_t bFcode;			/* backward fcode - used as above */
-	int b_chromaX, b_chromaY;
 
 	/* fields for direct mode */
 	VECTOR directmvF[4];		/* scaled reference vectors */
@@ -113,10 +114,9 @@ typedef struct
 	int16_t * dctSpace;			/* temporary space for dct */
 	uint32_t iQuant;			/* current quant */
 	uint32_t quant_type;		/* current quant type */
-	unsigned int cbp[2];		/* CBP of the best vector found so far + cbp for inter4v search */
+	unsigned int cbp[2];					/* CBP of the best vector found so far + cbp for inter4v search */
 	const uint16_t * scan_table; /* current scan table */
 	const uint16_t * mpeg_quant_matrices;			/* current MPEG quantization matrices */
-	int lambda[6];				/* R-D lambdas for all 6 blocks */
 
 } SearchData;
 
@@ -150,10 +150,10 @@ MainSearchFunc(int x, int y, SearchData * const Data,
 MainSearchFunc xvid_me_DiamondSearch, xvid_me_AdvDiamondSearch, xvid_me_SquareSearch;
 
 void
-xvid_me_SubpelRefine(VECTOR centerMV, SearchData * const data, CheckFunc * const CheckCandidate, int dir);
+xvid_me_SubpelRefine(SearchData * const data, CheckFunc * const CheckCandidate);
 
-void 
-FullRefine_Fast(SearchData * data, CheckFunc * CheckCandidate, int direction);
+void
+SubpelRefine_Fast(SearchData * data, CheckFunc * CheckCandidate);
 
 void
 xvid_me_ModeDecision_RD(SearchData * const Data,
@@ -182,19 +182,6 @@ xvid_me_ModeDecision_Fast(SearchData * const Data,
 		const IMAGE * const pRef,
 		const IMAGE * const vGMC,
 		const int coding_type);
-
-void 
-ModeDecision_BVOP_RD(SearchData * const Data_d,
-					 SearchData * const Data_b,
-					 SearchData * const Data_f,
-					 SearchData * const Data_i,
-					 MACROBLOCK * const pMB,
-					 const MACROBLOCK * const b_mb,
-					 VECTOR * f_predMV,
-					 VECTOR * b_predMV,
-					 const uint32_t MotionFlags,
-					 const MBParam * const pParam,
-					 int x, int y);
 
 
 #endif							/* _ESTIMATION_H_ */

@@ -28,19 +28,10 @@ BITS 32
 
 %macro cglobal 1
 	%ifdef PREFIX
-		%ifdef MARK_FUNCS
-			global _%1:function %1.endfunc-%1
-			%define %1 _%1:function %1.endfunc-%1
-		%else
-			global _%1
-			%define %1 _%1
-		%endif
+		global _%1
+		%define %1 _%1
 	%else
-		%ifdef MARK_FUNCS
-			global %1:function %1.endfunc-%1
-		%else
-			global %1
-		%endif
+		global %1
 	%endif
 %endmacro
 
@@ -1160,7 +1151,6 @@ ALIGN 16
   add esp, 128
 
   ret
-.endfunc
 
 
 ;-----------------------------------------------------------------------------
@@ -1252,5 +1242,3 @@ ALIGN 16
   add esp, 128
 
   ret
-.endfunc
-

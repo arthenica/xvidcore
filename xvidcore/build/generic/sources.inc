@@ -22,7 +22,6 @@ SRC_GENERIC = \
 	motion/estimation_gmc.c \
 	motion/estimation_pvop.c \
 	motion/estimation_rd_based.c \
-	motion/estimation_rd_based_bvop.c \
 	motion/gmc.c \
 	motion/motion_comp.c \
 	motion/vop_type_decision.c \
@@ -61,8 +60,6 @@ SRC_IA32 = \
 	image/x86_asm/interpolate8x8_3dne.asm \
 	image/x86_asm/interpolate8x8_mmx.asm \
 	image/x86_asm/interpolate8x8_xmm.asm \
-	image/x86_asm/postprocessing_mmx.asm \
-	image/x86_asm/postprocessing_sse2.asm \
 	image/x86_asm/reduced_mmx.asm \
 	image/x86_asm/qpel_mmx.asm \
 	motion/x86_asm/sad_xmm.asm \
@@ -93,11 +90,11 @@ SRC_IA64_IDCT_GCC = \
 SRC_IA64_IDCT_ECC = \
 	dct/ia64_asm/idct_ia64_ecc.s
 
-SRC_PPC_ALTIVEC = \
-	utils/ppc_asm/altivec_trigger.c \
-	utils/ppc_asm/mem_transfer_altivec.c \
-	motion/ppc_asm/sad_altivec.c \
-	dct/ppc_asm/idct_altivec.c \
-	image/ppc_asm/interpolate8x8_altivec.c \
-	image/ppc_asm/colorspace_altivec.c \
-	quant/ppc_asm/quant_h263_altivec.c
+SRC_PPC = \
+	bitstream/ppc_asm/cbp_ppc.s
+
+SRC_ALTIVEC = \
+	bitstream/ppc_asm/cbp_altivec.s \
+	dct/ppc_asm/fdct_altivec.s \
+	dct/ppc_asm/idct_altivec.s \
+	motion/ppc_asm/sad_altivec.s

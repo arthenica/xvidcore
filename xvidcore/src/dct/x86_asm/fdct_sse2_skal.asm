@@ -19,28 +19,19 @@
 ; *  along with this program; if not, write to the Free Software
 ; *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 ; *
-; * $Id: fdct_sse2_skal.asm,v 1.5 2004-08-29 10:02:38 edgomez Exp $
+; * $Id: fdct_sse2_skal.asm,v 1.2.2.1 2004-07-24 11:38:12 edgomez Exp $
 ; *
 ; ***************************************************************************/
 
 BITS 32
 
 %macro cglobal 1
-	%ifdef PREFIX
-		%ifdef MARK_FUNCS
-			global _%1:function %1.endfunc-%1
-			%define %1 _%1:function %1.endfunc-%1
-		%else
-			global _%1
-			%define %1 _%1
-		%endif
-	%else
-		%ifdef MARK_FUNCS
-			global %1:function %1.endfunc-%1
-		%else
-			global %1
-		%endif
-	%endif
+  %ifdef PREFIX
+    global _%1
+    %define %1 _%1
+  %else
+    global %1
+  %endif
 %endmacro
 
 ;-----------------------------------------------------------------------------
@@ -455,7 +446,6 @@ idct_sse2_skal:
   iMTX_MULT  7, iTab2, Idct_Rnd7, 11
   iLLM_PASS ecx+0
   ret
-.endfunc
 
 ;-----------------------------------------------------------------------------
 ; Helper macro TEST_ROW (test a null row)
@@ -530,7 +520,6 @@ idct_sse2_sparse_skal:
 
   iLLM_PASS ecx+0
   ret
-.endfunc
 
 ;-----------------------------------------------------------------------------
 ; Helper macro fLLM_PASS
@@ -696,5 +685,3 @@ fdct_sse2_skal:
   fMTX_MULT  6, fTab3, Fdct_Rnd1
   fMTX_MULT  7, fTab2, Fdct_Rnd1
   ret
-.endfunc
-

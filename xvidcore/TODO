@@ -49,23 +49,4 @@ Already completed items:
 * vfw bitrate calculator (peter)
 * dshow configure from command line (peter)
 
-
-
-ideas for v1.1 and beyond
--------------------------
-libxvidcore
-* video buffer verifier
-
-vfw
-* integrated Packed<->ISO converter
-* vfw-ext api to get/set configuration parameters
-* ICM_DECOMPRESSEX_* support
-
-directshow
-* manual aspect ratio setting (1:1, 4:3, 16:9, Custom)
-* option to display libxvidcore version and bitstream ontop of video
-  hopefuly, using smooth fonts, not image_printf().
-
-
-
-Last edited: $Date: 2004-07-15 11:54:53 $
+Last edited: $Date: 2004-06-05 23:08:01 $
