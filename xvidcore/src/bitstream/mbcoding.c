@@ -50,7 +50,7 @@
  *  exception also makes it possible to release a modified version which
  *  carries forward this exception.
  *
- * $Id: mbcoding.c,v 1.40 2003-02-06 00:48:08 edgomez Exp $
+ * $Id: mbcoding.c,v 1.33 2002-11-17 00:57:57 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -66,26 +66,16 @@
 #define ABS(X) (((X)>0)?(X):-(X))
 #define CLIP(X,A) (X > A) ? (A) : (X)
 
-/* #define BIGLUT */
-
-#ifdef BIGLUT
-#define LEVELOFFSET 2048
-#else
-#define LEVELOFFSET 32
-#endif
-
 /*****************************************************************************
  * Local data
  ****************************************************************************/
 
-static REVERSE_EVENT DCT3D[2][4096];
+/* msvc sp5+pp gets confused if they globals are made static */
+VLC intra_table[524032];
+VLC inter_table[524032];
 
-#ifdef BIGLUT
-static VLC coeff_VLC[2][2][4096][64];
-static VLC *intra_table, *inter_table; 
-#else
-static VLC coeff_VLC[2][2][64][64];
-#endif
+static VLC DCT3Dintra[4096];
+static VLC DCT3Dinter[4096];
 
 /*****************************************************************************
  * Vector Length Coding Initialization
@@ -94,147 +84,122 @@ static VLC coeff_VLC[2][2][64][64];
 void
 init_vlc_tables(void)
 {
-	uint32_t i, j, intra, last, run,  run_esc, level, level_esc, escape, escape_len, offset;
 
-#ifdef BIGLUT
-	intra_table = (VLC*)coeff_VLC[1];
-	inter_table = (VLC*)coeff_VLC[0]; 
-#endif
+	int32_t k, l, i, intra, last;
+	VLC *vlc[2];
+	VLC const **coeff_ptr;
+	VLC *vlc1, *vlc2;
 
+	vlc1 = DCT3Dintra;
+	vlc2 = DCT3Dinter;
 
-	for (intra = 0; intra < 2; intra++)
-		for (i = 0; i < 4096; i++)
-			DCT3D[intra][i].event.level = 0;
+	vlc[0] = intra_table;
+	vlc[1] = inter_table;
 
-	for (intra = 0; intra < 2; intra++)
-		for (last = 0; last < 2; last++)
-		{
-			for (run = 0; run < 63 + last; run++)
-				for (level = 0; level < 32 << intra; level++)
-				{
-#ifdef BIGLUT
-					offset = LEVELOFFSET;
-#else
-					offset = !intra * LEVELOFFSET;
-#endif
-					coeff_VLC[intra][last][level + offset][run].len = 128;
-				}
-		}
+	/*
+	 * Generate encoding vlc lookup tables
+	 * the lookup table idea is taken from the excellent fame project
+	 * by Vivien Chapellier
+	 */
+	for (i = 0; i < 4; i++) {
+		intra = i % 2;
+		last = i / 2;
 
-	for (intra = 0; intra < 2; intra++)
-		for (i = 0; i < 102; i++)
-		{
-#ifdef BIGLUT
-			offset = LEVELOFFSET;
-#else
-			offset = !intra * LEVELOFFSET;
-#endif
-			for (j = 0; j < (uint32_t)(1 << (12 - coeff_tab[intra][i].vlc.len)); j++)
-			{
-				DCT3D[intra][(coeff_tab[intra][i].vlc.code << (12 - coeff_tab[intra][i].vlc.len)) | j].len	 = coeff_tab[intra][i].vlc.len;
-				DCT3D[intra][(coeff_tab[intra][i].vlc.code << (12 - coeff_tab[intra][i].vlc.len)) | j].event = coeff_tab[intra][i].event;
-			}
+		coeff_ptr = coeff_vlc[last + 2 * intra];
 
-			coeff_VLC[intra][coeff_tab[intra][i].event.last][coeff_tab[intra][i].event.level + offset][coeff_tab[intra][i].event.run].code
-				= coeff_tab[intra][i].vlc.code << 1;
-			coeff_VLC[intra][coeff_tab[intra][i].event.last][coeff_tab[intra][i].event.level + offset][coeff_tab[intra][i].event.run].len
-				= coeff_tab[intra][i].vlc.len + 1;
-#ifndef BIGLUT
-			if (!intra)
-#endif
-			{
-				coeff_VLC[intra][coeff_tab[intra][i].event.last][offset - coeff_tab[intra][i].event.level][coeff_tab[intra][i].event.run].code
-					= (coeff_tab[intra][i].vlc.code << 1) | 1;
-				coeff_VLC[intra][coeff_tab[intra][i].event.last][offset - coeff_tab[intra][i].event.level][coeff_tab[intra][i].event.run].len
-					= coeff_tab[intra][i].vlc.len + 1;
-			}
-		}
+		for (k = -2047; k < 2048; k++) {	// level
+			int8_t const *max_level_ptr = max_level[last + 2 * intra];
+			int8_t const *max_run_ptr = max_run[last + 2 * intra];
 
-	for (intra = 0; intra < 2; intra++)
-		for (last = 0; last < 2; last++)
-			for (run = 0; run < 63 + last; run++)
-			{
-				for (level = 1; level < (uint32_t)(32 << intra); level++)
-				{
-					if (level <= max_level[intra][last][run] && run <= max_run[intra][last][level])
-					    continue;
+			for (l = 0; l < 64; l++) {	// run
+				int32_t level = k;
+				ptr_t run = l;
 
-#ifdef BIGLUT
-					offset = LEVELOFFSET;
-#else
-					offset = !intra * LEVELOFFSET;
-#endif
-                    level_esc = level - max_level[intra][last][run];
-					run_esc = run - 1 - max_run[intra][last][level];
+				if ((abs(level) <= max_level_ptr[run]) && (run <= (uint32_t) max_run_ptr[abs(level)])) {	// level < max_level and run < max_run
 
-					if (level_esc <= max_level[intra][last][run] && run <= max_run[intra][last][level_esc])
-					{
-						escape     = ESCAPE1;
-						escape_len = 7 + 1;
-						run_esc    = run;
-					}
+					vlc[intra]->code = 0;
+					vlc[intra]->len = 0;
+					goto loop_end;
+				} else {
+					if (level > 0)	// correct level
+						level -= max_level_ptr[run];
 					else
-					{
-						if (run_esc <= max_run[intra][last][level] && level <= max_level[intra][last][run_esc])
-						{
-							escape     = ESCAPE2;
-							escape_len = 7 + 2;
-							level_esc  = level;
-						}
-						else
-						{
-#ifndef BIGLUT
-							if (!intra)
-#endif
-							{
-								coeff_VLC[intra][last][level + offset][run].code
-									= (ESCAPE3 << 21) | (last << 20) | (run << 14) | (1 << 13) | ((level & 0xfff) << 1) | 1;
-								coeff_VLC[intra][last][level + offset][run].len = 30;
-									coeff_VLC[intra][last][offset - level][run].code
-									= (ESCAPE3 << 21) | (last << 20) | (run << 14) | (1 << 13) | ((-level & 0xfff) << 1) | 1;
-								coeff_VLC[intra][last][offset - level][run].len = 30;
-							}
-							continue;
-						}
+						level += max_level_ptr[run];
+
+					if ((abs(level) <= max_level_ptr[run]) &&
+						(run <= (uint32_t) max_run_ptr[abs(level)])) {
+
+						vlc[intra]->code = 0x06;
+						vlc[intra]->len = 8;
+						goto loop_end;
 					}
 
-					coeff_VLC[intra][last][level + offset][run].code
-						= (escape << coeff_VLC[intra][last][level_esc + offset][run_esc].len)
-						|  coeff_VLC[intra][last][level_esc + offset][run_esc].code;
-					coeff_VLC[intra][last][level + offset][run].len
-						= coeff_VLC[intra][last][level_esc + offset][run_esc].len + escape_len;
-#ifndef BIGLUT
-					if (!intra)
-#endif
-					{
-						coeff_VLC[intra][last][offset - level][run].code
-							= (escape << coeff_VLC[intra][last][level_esc + offset][run_esc].len)
-							|  coeff_VLC[intra][last][level_esc + offset][run_esc].code | 1;
-						coeff_VLC[intra][last][offset - level][run].len
-							= coeff_VLC[intra][last][level_esc + offset][run_esc].len + escape_len;
+					if (level > 0)	// still here?
+						level += max_level_ptr[run];	// restore level
+					else
+						level -= max_level_ptr[run];
+
+					run -= max_run_ptr[abs(level)] + 1;	// and change run
+
+					if ((abs(level) <= max_level_ptr[run]) &&
+						(run <= (uint32_t) max_run_ptr[abs(level)])) {
+
+						vlc[intra]->code = 0x0e;
+						vlc[intra]->len = 9;
+						goto loop_end;
 					}
+					run += max_run_ptr[abs(level)] + 1;
 				}
 
-#ifdef BIGLUT
-				for (level = (uint32_t)(32 << intra); level < 2048; level++)
-				{
-					coeff_VLC[intra][last][level + offset][run].code
-						= (ESCAPE3 << 21) | (last << 20) | (run << 14) | (1 << 13) | ((level & 0xfff) << 1) | 1;
-					coeff_VLC[intra][last][level + offset][run].len = 30;
+				vlc[intra]->code =
+					(uint32_t) ((l << 14) | (0x1e + last) << 20) | (1 << 13) |
+					((k & 0xfff) << 1) | 1;
 
-					coeff_VLC[intra][last][offset - level][run].code
-						= (ESCAPE3 << 21) | (last << 20) | (run << 14) | (1 << 13) | ((-level & 0xfff) << 1) | 1;
-					coeff_VLC[intra][last][offset - level][run].len = 30;
+				vlc[intra]->len = 30;
+				vlc[intra]++;
+				continue;
+
+			  loop_end:
+				if (level != 0) {
+					vlc[intra]->code =
+						(vlc[intra]->
+						 code << (coeff_ptr[run][abs(level) - 1].len +
+								  1)) | (coeff_ptr[run][abs(level) -
+														1].code << 1);
+					vlc[intra]->len =
+						(coeff_ptr[run][abs(level) - 1].len + 1) +
+						vlc[intra]->len;
+
+					if (level < 0)
+						vlc[intra]->code += 1;
 				}
-#else
-				if (!intra)
-				{
-					coeff_VLC[intra][last][0][run].code
-						= (ESCAPE3 << 21) | (last << 20) | (run << 14) | (1 << 13) | ((-32 & 0xfff) << 1) | 1;
-					coeff_VLC[intra][last][0][run].len = 30;
-				}
-#endif
+
+				vlc[intra]++;
 			}
+		}
+	}
+
+	for (i = 0; i < 4096; i++) {
+		if (i >= 512) {
+			*vlc1 = DCT3Dtab3[(i >> 5) - 16];
+			*vlc2 = DCT3Dtab0[(i >> 5) - 16];
+		} else if (i >= 128) {
+			*vlc1 = DCT3Dtab4[(i >> 2) - 32];
+			*vlc2 = DCT3Dtab1[(i >> 2) - 32];
+		} else if (i >= 8) {
+			*vlc1 = DCT3Dtab5[i - 8];
+			*vlc2 = DCT3Dtab2[i - 8];
+		} else {
+			*vlc1 = ERRtab[i];
+			*vlc2 = ERRtab[i];
+		}
+
+		vlc1++;
+		vlc2++;
+	}
+	DCT3D[0] = DCT3Dinter;
+	DCT3D[1] = DCT3Dintra;
+
 }
 
 /*****************************************************************************
@@ -296,8 +261,6 @@ CodeVector(Bitstream * bs,
 
 }
 
-#ifdef BIGLUT
-
 static __inline void
 CodeCoeff(Bitstream * bs,
 		  const int16_t qcoeff[64],
@@ -317,140 +280,24 @@ CodeCoeff(Bitstream * bs,
 		j++;
 
 	do {
-		vlc = table + 64 * 2048 + (v << 6) + j - last;
+		vlc = table + 64 * 2047 + (v << 6) + j - last;
 		last = ++j;
 
-		/* count zeroes */
+		// count zeroes
 		while (j < 64 && (v = qcoeff[zigzag[j]]) == 0)
 			j++;
 
-		/* write code */
+		// write code
 		if (j != 64) {
 			BitstreamPutBits(bs, vlc->code, vlc->len);
 		} else {
-			vlc += 64 * 4096;
+			vlc += 64 * 4095;
 			BitstreamPutBits(bs, vlc->code, vlc->len);
 			break;
 		}
 	} while (1);
 
 }
-
-#else
-
-static __inline void
-CodeCoeffInter(Bitstream * bs,
-		  const int16_t qcoeff[64],
-		  const uint16_t * zigzag)
-{
-	uint32_t i, run, prev_run, code, len;
-	int32_t level, prev_level, level_shifted;
-
-	i	= 0;
-	run = 0;
-
-	while (!(level = qcoeff[zigzag[i++]]))
-		run++;
-
-	prev_level = level;
-	prev_run   = run;
-	run = 0;
-
-	while (i < 64)
-	{
-		if ((level = qcoeff[zigzag[i++]]) != 0)
-		{
-			level_shifted = prev_level + 32;
-			if (!(level_shifted & -64))
-			{
-				code = coeff_VLC[0][0][level_shifted][prev_run].code;
-				len	 = coeff_VLC[0][0][level_shifted][prev_run].len;
-			}
-			else
-			{
-				code = (ESCAPE3 << 21) | (prev_run << 14) | (1 << 13) | ((prev_level & 0xfff) << 1) | 1;
-				len  = 30;
-			}
-			BitstreamPutBits(bs, code, len);
-			prev_level = level;
-			prev_run   = run;
-			run = 0;
-		}
-		else
-			run++;
-	}
-
-	level_shifted = prev_level + 32;
-	if (!(level_shifted & -64))
-	{
-		code = coeff_VLC[0][1][level_shifted][prev_run].code;
-		len	 = coeff_VLC[0][1][level_shifted][prev_run].len;
-	}
-	else
-	{
-		code = (ESCAPE3 << 21) | (1 << 20) | (prev_run << 14) | (1 << 13) | ((prev_level & 0xfff) << 1) | 1;
-		len  = 30;
-	}
-	BitstreamPutBits(bs, code, len);
-}
-
-static __inline void
-CodeCoeffIntra(Bitstream * bs,
-		  const int16_t qcoeff[64],
-		  const uint16_t * zigzag)
-{
-	uint32_t i, abs_level, run, prev_run, code, len;
-	int32_t level, prev_level;
-
-	i	= 1;
-	run = 0;
-
-	while (!(level = qcoeff[zigzag[i++]]))
-		run++;
-
-	prev_level = level;
-	prev_run   = run;
-	run = 0;
-
-	while (i < 64)
-	{
-		if ((level = qcoeff[zigzag[i++]]) != 0)
-		{
-			abs_level = ABS(prev_level);
-			abs_level = abs_level < 64 ? abs_level : 0;
-			code	  = coeff_VLC[1][0][abs_level][prev_run].code;
-			len		  = coeff_VLC[1][0][abs_level][prev_run].len;
-			if (len != 128)
-				code |= (prev_level < 0);
-			else
-			{
-		        code = (ESCAPE3 << 21) | (prev_run << 14) | (1 << 13) | ((prev_level & 0xfff) << 1) | 1;
-				len  = 30;
-			}
-			BitstreamPutBits(bs, code, len);
-			prev_level = level;
-			prev_run   = run;
-			run = 0;
-		}
-		else
-			run++;
-	}
-
-	abs_level = ABS(prev_level);
-	abs_level = abs_level < 64 ? abs_level : 0;
-	code	  = coeff_VLC[1][1][abs_level][prev_run].code;
-	len		  = coeff_VLC[1][1][abs_level][prev_run].len;
-	if (len != 128)
-		code |= (prev_level < 0);
-	else
-	{
-		code = (ESCAPE3 << 21) | (1 << 20) | (prev_run << 14) | (1 << 13) | ((prev_level & 0xfff) << 1) | 1;
-		len  = 30;
-	}
-	BitstreamPutBits(bs, code, len);
-}
-
-#endif
 
 /*****************************************************************************
  * Local functions
@@ -468,7 +315,7 @@ CodeBlockIntra(const FRAMEINFO * frame,
 
 	cbpy = pMB->cbp >> 2;
 
-	/* write mcbpc */
+	// write mcbpc
 	if (frame->coding_type == I_VOP) {
 		mcbpc = ((pMB->mode >> 1) & 3) | ((pMB->cbp & 3) << 2);
 		BitstreamPutBits(bs, mcbpc_intra_tab[mcbpc].code,
@@ -479,24 +326,24 @@ CodeBlockIntra(const FRAMEINFO * frame,
 						 mcbpc_inter_tab[mcbpc].len);
 	}
 
-	/* ac prediction flag */
+	// ac prediction flag
 	if (pMB->acpred_directions[0])
 		BitstreamPutBits(bs, 1, 1);
 	else
 		BitstreamPutBits(bs, 0, 1);
 
-	/* write cbpy */
+	// write cbpy
 	BitstreamPutBits(bs, cbpy_tab[cbpy].code, cbpy_tab[cbpy].len);
 
-	/* write dquant */
+	// write dquant
 	if (pMB->mode == MODE_INTRA_Q)
 		BitstreamPutBits(bs, pMB->dquant, 2);
 
-	/* write interlacing */
+	// write interlacing
 	if (frame->global_flags & XVID_INTERLACING) {
 		BitstreamPutBit(bs, pMB->field_dct);
 	}
-	/* code block coeffs */
+	// code block coeffs
 	for (i = 0; i < 6; i++) {
 		if (i < 4)
 			BitstreamPutBits(bs, dcy_tab[qcoeff[i * 64 + 0] + 255].code,
@@ -508,12 +355,9 @@ CodeBlockIntra(const FRAMEINFO * frame,
 		if (pMB->cbp & (1 << (5 - i))) {
 			bits = BitstreamPos(bs);
 
-#ifdef BIGLUT
 			CodeCoeff(bs, &qcoeff[i * 64], intra_table,
 					  scan_tables[pMB->acpred_directions[i]], 1);
-#else
-			CodeCoeffIntra(bs, &qcoeff[i * 64], scan_tables[pMB->acpred_directions[i]]);
-#endif
+
 			bits = BitstreamPos(bs) - bits;
 			pStat->iTextBits += bits;
 		}
@@ -536,37 +380,37 @@ CodeBlockInter(const FRAMEINFO * frame,
 	mcbpc = (pMB->mode & 7) | ((pMB->cbp & 3) << 3);
 	cbpy = 15 - (pMB->cbp >> 2);
 
-	/* write mcbpc */
+	// write mcbpc
 	BitstreamPutBits(bs, mcbpc_inter_tab[mcbpc].code,
 					 mcbpc_inter_tab[mcbpc].len);
 
-	/* write cbpy */
+	// write cbpy
 	BitstreamPutBits(bs, cbpy_tab[cbpy].code, cbpy_tab[cbpy].len);
 
-	/* write dquant */
+	// write dquant
 	if (pMB->mode == MODE_INTER_Q)
 		BitstreamPutBits(bs, pMB->dquant, 2);
 
-	/* interlacing */
+	// interlacing
 	if (frame->global_flags & XVID_INTERLACING) {
 		if (pMB->cbp) {
 			BitstreamPutBit(bs, pMB->field_dct);
 			DPRINTF(DPRINTF_DEBUG, "codep: field_dct: %d", pMB->field_dct);
 		}
 
-		/* if inter block, write field ME flag */
+		// if inter block, write field ME flag
 		if (pMB->mode == MODE_INTER || pMB->mode == MODE_INTER_Q) {
 			BitstreamPutBit(bs, pMB->field_pred);
 			DPRINTF(DPRINTF_DEBUG, "codep: field_pred: %d", pMB->field_pred);
 
-			/* write field prediction references */
+			// write field prediction references
 			if (pMB->field_pred) {
 				BitstreamPutBit(bs, pMB->field_for_top);
 				BitstreamPutBit(bs, pMB->field_for_bot);
 			}
 		}
 	}
-	/* code motion vector(s) */
+	// code motion vector(s)
 	for (i = 0; i < (pMB->mode == MODE_INTER4V ? 4 : 1); i++) {
 		CodeVector(bs, pMB->pmvs[i].x, frame->fcode, pStat);
 		CodeVector(bs, pMB->pmvs[i].y, frame->fcode, pStat);
@@ -574,14 +418,10 @@ CodeBlockInter(const FRAMEINFO * frame,
 
 	bits = BitstreamPos(bs);
 
-	/* code block coeffs */
+	// code block coeffs
 	for (i = 0; i < 6; i++)
 		if (pMB->cbp & (1 << (5 - i)))
-#ifdef BIGLUT
 			CodeCoeff(bs, &qcoeff[i * 64], inter_table, scan_tables[0], 0);
-#else
-			CodeCoeffInter(bs, &qcoeff[i * 64], scan_tables[0]);
-#endif
 
 	bits = BitstreamPos(bs) - bits;
 	pStat->iTextBits += bits;
@@ -601,7 +441,7 @@ MBCoding(const FRAMEINFO * frame,
 {
 
 	if (frame->coding_type == P_VOP) {
-			BitstreamPutBit(bs, 0);	/* coded */
+			BitstreamPutBit(bs, 0);	// coded
 	}
 
 	if (pMB->mode == MODE_INTRA || pMB->mode == MODE_INTRA_Q)
@@ -615,7 +455,7 @@ MBCoding(const FRAMEINFO * frame,
 void
 MBSkip(Bitstream * bs)
 {
-	BitstreamPutBit(bs, 1);	/* not coded */
+	BitstreamPutBit(bs, 1);	// not coded
 	return;
 }
 
@@ -819,30 +659,34 @@ get_coeff(Bitstream * bs,
 {
 
 	uint32_t mode;
+	const VLC *tab;
 	int32_t level;
-	REVERSE_EVENT *reverse_event;
 
-	if (short_video_header)		/* inter-VLCs will be used for both intra and inter blocks */
+	if (short_video_header)		// inter-VLCs will be used for both intra and inter blocks
 		intra = 0;
 
-	if (BitstreamShowBits(bs, 7) != ESCAPE) {
-		reverse_event = &DCT3D[intra][BitstreamShowBits(bs, 12)];
+	tab = &DCT3D[intra][BitstreamShowBits(bs, 12)];
 
-		if ((level = reverse_event->event.level) == 0)
-			goto error;
+	if (tab->code == -1)
+		goto error;
 
-		*last = reverse_event->event.last;
-		*run  = reverse_event->event.run;
+	BitstreamSkip(bs, tab->len);
 
-		BitstreamSkip(bs, reverse_event->len);
-
-		return BitstreamGetBits(bs, 1) ? -level : level;
+	if (tab->code != ESCAPE) {
+		if (!intra) {
+			*run = (tab->code >> 4) & 255;
+			level = tab->code & 15;
+			*last = (tab->code >> 12) & 1;
+		} else {
+			*run = (tab->code >> 8) & 255;
+			level = tab->code & 255;
+			*last = (tab->code >> 16) & 1;
+		}
+		return BitstreamGetBit(bs) ? -level : level;
 	}
 
-	BitstreamSkip(bs, 7);
-
 	if (short_video_header) {
-		/* escape mode 4 - H.263 type, only used if short_video_header = 1  */
+		// escape mode 4 - H.263 type, only used if short_video_header = 1 
 		*last = BitstreamGetBit(bs);
 		*run = BitstreamGetBits(bs, 6);
 		level = BitstreamGetBits(bs, 8);
@@ -850,7 +694,7 @@ get_coeff(Bitstream * bs,
 		if (level == 0 || level == 128)
 			DPRINTF(DPRINTF_ERROR, "Illegal LEVEL for ESCAPE mode 4: %d", level);
 
-		return (level << 24) >> 24;
+		return (level >= 128 ? -(256 - level) : level);
 	}
 
 	mode = BitstreamShowBits(bs, 2);
@@ -858,37 +702,43 @@ get_coeff(Bitstream * bs,
 	if (mode < 3) {
 		BitstreamSkip(bs, (mode == 2) ? 2 : 1);
 
-		reverse_event = &DCT3D[intra][BitstreamShowBits(bs, 12)];
-
-		if ((level = reverse_event->event.level) == 0)
+		tab = &DCT3D[intra][BitstreamShowBits(bs, 12)];
+		if (tab->code == -1)
 			goto error;
 
-		*last = reverse_event->event.last;
-		*run  = reverse_event->event.run;
+		BitstreamSkip(bs, tab->len);
 
-		BitstreamSkip(bs, reverse_event->len);
+		if (!intra) {
+			*run = (tab->code >> 4) & 255;
+			level = tab->code & 15;
+			*last = (tab->code >> 12) & 1;
+		} else {
+			*run = (tab->code >> 8) & 255;
+			level = tab->code & 255;
+			*last = (tab->code >> 16) & 1;
+		}
 
-		if (mode < 2)			/* first escape mode, level is offset */
-			level += max_level[intra][*last][*run];
-		else					/* second escape mode, run is offset */
-			*run += max_run[intra][*last][level] + 1;
+		if (mode < 2)			// first escape mode, level is offset
+			level += max_level[*last + (!intra << 1)][*run];	// need to add back the max level
+		else if (mode == 2)		// second escape mode, run is offset
+			*run += max_run[*last + (!intra << 1)][level] + 1;
 
-		return BitstreamGetBits(bs, 1) ? -level : level;
+		return BitstreamGetBit(bs) ? -level : level;
 	}
-
-	/* third escape mode - fixed length codes */
+	// third escape mode - fixed length codes
 	BitstreamSkip(bs, 2);
 	*last = BitstreamGetBits(bs, 1);
 	*run = BitstreamGetBits(bs, 6);
-	BitstreamSkip(bs, 1);		/* marker */
+	BitstreamSkip(bs, 1);		// marker
 	level = BitstreamGetBits(bs, 12);
-	BitstreamSkip(bs, 1);		/* marker */
+	BitstreamSkip(bs, 1);		// marker
 
-	return (level << 20) >> 20;
+	return (level & 0x800) ? (level | (-1 ^ 0xfff)) : level;
 
   error:
 	*run = VLC_ERROR;
 	return 0;
+
 }
 
 /*****************************************************************************
@@ -917,9 +767,9 @@ get_intra_block(Bitstream * bs,
 		block[scan[coeff]] = level;
 
 		DPRINTF(DPRINTF_COEFF,"block[%i] %i", scan[coeff], level);
-		/*DPRINTF(DPRINTF_COEFF,"block[%i] %i %08x", scan[coeff], level, BitstreamShowBits(bs, 32)); */
+		//DPRINTF(DPRINTF_COEFF,"block[%i] %i %08x", scan[coeff], level, BitstreamShowBits(bs, 32));
 
-		if (level < -2047 || level > 2047) {
+		if (level < -127 || level > 127) {
 			DPRINTF(DPRINTF_DEBUG, "warning: intra_overflow: %d", level);
 		}
 		coeff++;
@@ -951,7 +801,7 @@ get_inter_block(Bitstream * bs,
 
 		DPRINTF(DPRINTF_COEFF,"block[%i] %i", scan[p], level);
 
-		if (level < -2047 || level > 2047) {
+		if (level < -127 || level > 127) {
 			DPRINTF(DPRINTF_DEBUG, "warning: inter_overflow: %d", level);
 		}
 		p++;

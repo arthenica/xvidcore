@@ -52,7 +52,7 @@
  *  exception also makes it possible to release a modified version which
  *  carries forward this exception.
  *
- * $Id: timer.c,v 1.7 2002-11-26 23:44:11 edgomez Exp $
+ * $Id: timer.c,v 1.6 2002-11-17 00:51:11 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -91,7 +91,7 @@ double frequency = 0.0;
 	not very precise but sufficient
 */
 double
-get_freq(void)
+get_freq()
 {
 	int64_t x, y;
 	int32_t i;
@@ -110,9 +110,9 @@ get_freq(void)
 	return (double) (y - x) / 1000.;
 }
 
-/* set everything to zero */
+// set everything to zero //
 void
-init_timer(void)
+init_timer()
 {
 	frequency = get_freq();
 
@@ -124,97 +124,97 @@ init_timer(void)
 }
 
 void
-start_timer(void)
+start_timer()
 {
 	tim.current = read_counter();
 }
 
 void
-start_global_timer(void)
+start_global_timer()
 {
 	tim.global = read_counter();
 }
 
 void
-stop_dct_timer(void)
+stop_dct_timer()
 {
 	tim.dct += (read_counter() - tim.current);
 }
 
 void
-stop_idct_timer(void)
+stop_idct_timer()
 {
 	tim.idct += (read_counter() - tim.current);
 }
 
 void
-stop_quant_timer(void)
+stop_quant_timer()
 {
 	tim.quant += (read_counter() - tim.current);
 }
 
 void
-stop_iquant_timer(void)
+stop_iquant_timer()
 {
 	tim.iquant += (read_counter() - tim.current);
 }
 
 void
-stop_motion_timer(void)
+stop_motion_timer()
 {
 	tim.motion += (read_counter() - tim.current);
 }
 
 void
-stop_comp_timer(void)
+stop_comp_timer()
 {
 	tim.comp += (read_counter() - tim.current);
 }
 
 void
-stop_edges_timer(void)
+stop_edges_timer()
 {
 	tim.edges += (read_counter() - tim.current);
 }
 
 void
-stop_inter_timer(void)
+stop_inter_timer()
 {
 	tim.inter += (read_counter() - tim.current);
 }
 
 void
-stop_conv_timer(void)
+stop_conv_timer()
 {
 	tim.conv += (read_counter() - tim.current);
 }
 
 void
-stop_transfer_timer(void)
+stop_transfer_timer()
 {
 	tim.trans += (read_counter() - tim.current);
 }
 
 void
-stop_prediction_timer(void)
+stop_prediction_timer()
 {
 	tim.prediction += (read_counter() - tim.current);
 }
 
 void
-stop_coding_timer(void)
+stop_coding_timer()
 {
 	tim.coding += (read_counter() - tim.current);
 }
 
 void
-stop_interlacing_timer(void)
+stop_interlacing_timer()
 {
 	tim.interlacing += (read_counter() - tim.current);
 }
 
 void
-stop_global_timer(void)
+stop_global_timer()
 {
 	tim.overall += (read_counter() - tim.global);
 }
@@ -223,7 +223,7 @@ stop_global_timer(void)
     write log file with some timer information
 */
 void
-write_timer(void)
+write_timer()
 {
 	float dct_per, quant_per, idct_per, iquant_per, mot_per, comp_per,
 		interlacing_per;
@@ -233,7 +233,7 @@ write_timer(void)
 
 	count_frames++;
 
-	/* only write log file every 50 processed frames */
+	// only write log file every 50 processed frames //
 	if (count_frames % 50) {
 		FILE *fp;
 

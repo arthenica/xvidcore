@@ -50,7 +50,7 @@
  *  exception also makes it possible to release a modified version which
  *  carries forward this exception.
  *
- * $Id: quant_mpeg4.c,v 1.8 2002-12-15 01:21:12 edgomez Exp $
+ * $Id: quant_mpeg4.c,v 1.6 2002-11-17 00:41:19 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -100,14 +100,13 @@ static const uint32_t multipliers[32] = {
  * Functions
  ****************************************************************************/
 
-#if	0
-/*    quantize intra-block	*/
+/*    quantize intra-block
 
     // const int32_t quantd = DIV_DIV(VM18P*quant, VM18Q);
     //
     // level = DIV_DIV(16 * data[i], default_intra_matrix[i]);
     // coeff[i] = (level + quantd) / quant2;
-#endif
+*/
 
 void
 quant4_intra_c(int16_t * coeff,
@@ -122,7 +121,7 @@ quant4_intra_c(int16_t * coeff,
 
 	intra_matrix = get_intra_matrix();
 
-	coeff[0] = (int16_t)(DIV_DIV(data[0], (int32_t) dcscalar));
+	coeff[0] = DIV_DIV(data[0], (int32_t) dcscalar);
 
 	for (i = 1; i < 64; i++) {
 		if (data[i] < 0) {
@@ -136,7 +135,7 @@ quant4_intra_c(int16_t * coeff,
 
 			level = ((level << 4) + (intra_matrix[i] >> 1)) / intra_matrix[i];
 			level = ((level + quantd) * mult) >> 17;
-			coeff[i] = (int16_t)level;
+			coeff[i] = level;
 		} else {
 			coeff[i] = 0;
 		}
@@ -145,9 +144,9 @@ quant4_intra_c(int16_t * coeff,
 
 
 
-/*    dequantize intra-block & clamp to [-2048,2047]	*/
-    /* data[i] = (coeff[i] * default_intra_matrix[i] * quant2) >> 4; */
-
+/*    dequantize intra-block & clamp to [-2048,2047]
+    // data[i] = (coeff[i] * default_intra_matrix[i] * quant2) >> 4;
+*/
 
 void
 dequant4_intra_c(int16_t * data,
@@ -160,7 +159,7 @@ dequant4_intra_c(int16_t * data,
 
 	intra_matrix = get_intra_matrix();
 
-	data[0] = (int16_t)(coeff[0] * dcscalar);
+	data[0] = coeff[0] * dcscalar;
 	if (data[0] < -2048) {
 		data[0] = -2048;
 	} else if (data[0] > 2047) {
@@ -175,25 +174,24 @@ dequant4_intra_c(int16_t * data,
 
 			level = (level * intra_matrix[i] * quant) >> 3;
 			data[i] = (level <= 2048 ? -(int16_t) level : -2048);
-		} else					/* if (coeff[i] > 0) */
+		} else					// if (coeff[i] > 0)
 		{
 			uint32_t level = coeff[i];
 
 			level = (level * intra_matrix[i] * quant) >> 3;
-			data[i] = (int16_t)(level <= 2047 ? level : 2047);
+			data[i] = (level <= 2047 ? level : 2047);
 		}
 	}
 }
 
 
 
-#if	0
-/*    quantize inter-block	*/
+/*    quantize inter-block
 
     // level = DIV_DIV(16 * data[i], default_intra_matrix[i]);
     // coeff[i] = (level + quantd) / quant2;
     // sum += abs(level);
-#endif
+*/
 
 uint32_t
 quant4_inter_c(int16_t * coeff,
@@ -221,7 +219,7 @@ quant4_inter_c(int16_t * coeff,
 			level = ((level << 4) + (inter_matrix[i] >> 1)) / inter_matrix[i];
 			level = (level * mult) >> 17;
 			sum += level;
-			coeff[i] = (int16_t)level;
+			coeff[i] = level;
 		} else {
 			coeff[i] = 0;
 		}
@@ -254,18 +252,18 @@ dequant4_inter_c(int16_t * data,
 
 			level = ((2 * level + 1) * inter_matrix[i] * quant) >> 4;
 			data[i] = (level <= 2048 ? -level : -2048);
-		} else					/* if (coeff[i] > 0) */
+		} else					// if (coeff[i] > 0)
 		{
 			uint32_t level = coeff[i];
 
 			level = ((2 * level + 1) * inter_matrix[i] * quant) >> 4;
-			data[i] = (int16_t)(level <= 2047 ? level : 2047);
+			data[i] = (level <= 2047 ? level : 2047);
 		}
 
 		sum ^= data[i];
 	}
 
-	/* mismatch control */
+	// mismatch control
 
 	if ((sum & 1) == 0) {
 		data[63] ^= 1;

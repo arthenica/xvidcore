@@ -50,7 +50,7 @@
  *  exception also makes it possible to release a modified version which
  *  carries forward this exception.
  *
- * $Id: timer.h,v 1.8 2002-11-26 23:44:11 edgomez Exp $
+ * $Id: timer.h,v 1.7 2002-11-17 00:51:11 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -95,75 +95,75 @@ extern void write_timer();
  */
 
 static __inline void
-start_timer(void)
+start_timer()
 {
 }
 static __inline void
-start_global_timer(void)
+start_global_timer()
 {
 }
 static __inline void
-stop_dct_timer(void)
+stop_dct_timer()
 {
 }
 static __inline void
-stop_idct_timer(void)
+stop_idct_timer()
 {
 }
 static __inline void
-stop_motion_timer(void)
+stop_motion_timer()
 {
 }
 static __inline void
-stop_comp_timer(void)
+stop_comp_timer()
 {
 }
 static __inline void
-stop_edges_timer(void)
+stop_edges_timer()
 {
 }
 static __inline void
-stop_inter_timer(void)
+stop_inter_timer()
 {
 }
 static __inline void
-stop_quant_timer(void)
+stop_quant_timer()
 {
 }
 static __inline void
-stop_iquant_timer(void)
+stop_iquant_timer()
 {
 }
 static __inline void
-stop_conv_timer(void)
+stop_conv_timer()
 {
 }
 static __inline void
-stop_transfer_timer(void)
+stop_transfer_timer()
 {
 }
 static __inline void
-init_timer(void)
+init_timer()
 {
 }
 static __inline void
-write_timer(void)
+write_timer()
 {
 }
 static __inline void
-stop_coding_timer(void)
+stop_coding_timer()
 {
 }
 static __inline void
-stop_interlacing_timer(void)
+stop_interlacing_timer()
 {
 }
 static __inline void
-stop_prediction_timer(void)
+stop_prediction_timer()
 {
 }
 static __inline void
-stop_global_timer(void)
+stop_global_timer()
 {
 }
 

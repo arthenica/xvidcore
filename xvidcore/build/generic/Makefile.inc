@@ -1,7 +1,12 @@
+LIB=libxvidcore.a
+LIBSO=libxvidcore.so
+
+
 SRCDIR = ../../src
 
-SRC_GENERIC = \
+SRC = \
  	$(SRCDIR)/decoder.c \
+	$(SRCDIR)/divx4.c \
 	$(SRCDIR)/encoder.c \
 	$(SRCDIR)/xvid.c \
 	$(SRCDIR)/bitstream/bitstream.c \
@@ -27,10 +32,18 @@ SRC_GENERIC = \
 	$(SRCDIR)/utils/ratecontrol.c \
 	$(SRCDIR)/utils/timer.c
 
-SRC_DIVX4COMPAT = \
-	$(SRCDIR)/divx4.c
 
-SRC_IA32 = \
+DIRS = \
+	$(SRCDIR)/*.o \
+	$(SRCDIR)/bitstream/*.o \
+	$(SRCDIR)/dct/*.o \
+	$(SRCDIR)/image/*.o \
+	$(SRCDIR)/motion/*.o \
+	$(SRCDIR)/prediction/*.o \
+	$(SRCDIR)/quant/*.o \
+	$(SRCDIR)/utils/*.o
+
+SRC_INTEL = \
 	$(SRCDIR)/utils/x86_asm/cpuid.asm \
 	\
 	$(SRCDIR)/bitstream/x86_asm/cbp_mmx.asm \
@@ -54,7 +67,15 @@ SRC_IA32 = \
 	$(SRCDIR)/motion/x86_asm/sad_sse2.asm \
 	\
 	$(SRCDIR)/image/x86_asm/interpolate8x8_3dn.asm \
-	$(SRCDIR)/motion/x86_asm/sad_3dn.asm
+	$(SRCDIR)/motion/x86_asm/sad_3dn.asm 
+	
+DIRS_INTEL = \
+	$(SRCDIR)/bitstream/x86_asm/*.o \
+	$(SRCDIR)/dct/x86_asm/*.o \
+	$(SRCDIR)/image/x86_asm/*.o \
+	$(SRCDIR)/motion/x86_asm/*.o \
+	$(SRCDIR)/quant/x86_asm/*.o \
+	$(SRCDIR)/utils/x86_asm/*.o
 
 SRC_IA64 = \
 	$(SRCDIR)/dct/ia64_asm/fdct_ia64.s \
@@ -62,7 +83,23 @@ SRC_IA64 = \
 	$(SRCDIR)/motion/ia64_asm/sad_ia64.s \
 	$(SRCDIR)/motion/ia64_asm/halfpel8_refine_ia64.s \
 	$(SRCDIR)/quant/ia64_asm/quant_h263_ia64.s \
-	$(SRCDIR)/utils/ia64_asm/mem_transfer_ia64.s \
+	$(SRCDIR)/utils/ia64_asm/mem_transfer_ia64.s
+
+ifeq ($(CC),ecc)
+SRC_IA64 += \
+	$(SRCDIR)/dct/ia64_asm/idct_ia64_ecc.s 
+else
+SRC_IA64 += \
+	$(SRCDIR)/dct/ia64_asm/idct_ia64_gcc.s 
+endif
+
+
+DIRS_IA64 = \
+	$(SRCDIR)/dct/ia64_asm/*.o \
+	$(SRCDIR)/image/ia64_asm/*.o \
+	$(SRCDIR)/motion/ia64_asm/*.o \
+	$(SRCDIR)/quant/ia64_asm/*.o \
+	$(SRCDIR)/utils/ia64_asm/*.o
 
 SRC_PPC = \
 	$(SRCDIR)/bitstream/ppc_asm/cbp_ppc.s
@@ -72,3 +109,8 @@ SRC_ALTIVEC = \
 	$(SRCDIR)/dct/ppc_asm/fdct_altivec.s \
 	$(SRCDIR)/dct/ppc_asm/idct_altivec.s \
 	$(SRCDIR)/motion/ppc_asm/sad_altivec.s
+
+
+DIRS_PPC = \
+	$(SRCDIR)/bitstream/ppc_asm/*.o \
+	$(SRCDIR)/dct/ppc_asm/*.o

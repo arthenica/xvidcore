@@ -52,7 +52,7 @@
  *  exception also makes it possible to release a modified version which
  *  carries forward this exception.
  *
- * $Id: encoder.c,v 1.90 2003-02-04 22:00:44 edgomez Exp $
+ * $Id: encoder.c,v 1.87 2002-11-16 23:38:16 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -78,6 +78,9 @@
 #include "quant/quant_matrix.h"
 #include "utils/mem_align.h"
 
+#ifdef _SMP
+#include "motion/smp_motion_est.h"
+#endif 
 /*****************************************************************************
  * Local macros
  ****************************************************************************/
@@ -235,6 +238,10 @@ encoder_create(XVID_ENC_PARAM * pParam)
 	pEnc->mbParam.fincr = pParam->fincr;
 
 	pEnc->mbParam.m_quant_type = H263_QUANT;
+
+#ifdef _SMP
+	pEnc->mbParam.num_threads = MIN(pParam->num_threads, MAXNUMTHREADS);
+#endif
 
 	pEnc->sStat.fMvPrevSigma = -1;
 
@@ -636,8 +643,9 @@ HintedMESet(Encoder * pEnc,
 		return;
 	}
 
-	pEnc->current->fcode = (hint->rawhints != 0) ?
-		(uint32_t)hint->mvhint.fcode : BitstreamGetBits(&bs, FCODEBITS);
+	pEnc->current->fcode =
+		(hint->rawhints) ? hint->mvhint.fcode : BitstreamGetBits(&bs,
+																 FCODEBITS);
 
 	length = pEnc->current->fcode + 5;
 	high = 1 << (length - 1);
@@ -652,17 +660,20 @@ HintedMESet(Encoder * pEnc,
 			VECTOR tmp;
 			int vec;
 
-			pMB->mode = (hint->rawhints != 0) ?
-				(uint32_t)bhint->mode : BitstreamGetBits(&bs, MODEBITS);
+			pMB->mode =
+				(hint->rawhints) ? bhint->mode : BitstreamGetBits(&bs,
+																  MODEBITS);
 
 			pMB->mode = (pMB->mode == MODE_INTER_Q) ? MODE_INTER : pMB->mode;
 			pMB->mode = (pMB->mode == MODE_INTRA_Q) ? MODE_INTRA : pMB->mode;
 
 			if (pMB->mode == MODE_INTER) {
-				tmp.x = (hint->rawhints) ?
-					bhint->mvs[0].x : (int)BitstreamGetBits(&bs, length);
-				tmp.y =	(hint->rawhints) ?
-					bhint->mvs[0].y : (int)BitstreamGetBits(&bs, length);
+				tmp.x =
+					(hint->rawhints) ? bhint->mvs[0].x : BitstreamGetBits(&bs,
+																		  length);
+				tmp.y =
+					(hint->rawhints) ? bhint->mvs[0].y : BitstreamGetBits(&bs,
+																		  length);
 				tmp.x -= (tmp.x >= high) ? high * 2 : 0;
 				tmp.y -= (tmp.y >= high) ? high * 2 : 0;
 
@@ -676,10 +687,12 @@ HintedMESet(Encoder * pEnc,
 				}
 			} else if (pMB->mode == MODE_INTER4V) {
 				for (vec = 0; vec < 4; ++vec) {
-					tmp.x = (hint->rawhints) ?
-						bhint->mvs[vec].x : (int)BitstreamGetBits(&bs, length);
-					tmp.y = (hint->rawhints) ?
-						bhint->mvs[vec].y : (int)BitstreamGetBits(&bs, length);
+					tmp.x =
+						(hint->rawhints) ? bhint->mvs[vec].
+						x : BitstreamGetBits(&bs, length);
+					tmp.y =
+						(hint->rawhints) ? bhint->mvs[vec].
+						y : BitstreamGetBits(&bs, length);
 					tmp.x -= (tmp.x >= high) ? high * 2 : 0;
 					tmp.y -= (tmp.y >= high) ? high * 2 : 0;
 
@@ -690,7 +703,7 @@ HintedMESet(Encoder * pEnc,
 					pMB->pmvs[vec].x = pMB->mvs[vec].x - pred.x;
 					pMB->pmvs[vec].y = pMB->mvs[vec].y - pred.y;
 				}
-			} else				/* intra / stuffing / not_coded */
+			} else				// intra / stuffing / not_coded
 			{
 				for (vec = 0; vec < 4; ++vec) {
 					pMB->mvs[vec].x = pMB->mvs[vec].y = 0;
@@ -863,7 +876,7 @@ FrameCodeI(Encoder * pEnc,
 		HintedMEGet(pEnc, 1);
 	}
 
-	return 1;					/* intra */
+	return 1;					// intra
 }
 
 
@@ -919,6 +932,14 @@ FrameCodeP(Encoder * pEnc,
 		HintedMESet(pEnc, &bIntra);
 	} else {
 
+#ifdef _SMP
+	if (pEnc->mbParam.num_threads > 1)
+		bIntra =
+			SMP_MotionEstimation(&pEnc->mbParam, pEnc->current, pEnc->reference,
+						 &pEnc->vInterH, &pEnc->vInterV, &pEnc->vInterHV,
+						 iLimit);
+	else
+#endif
 		bIntra =
 			MotionEstimation(&pEnc->mbParam, pEnc->current, pEnc->reference,
                          &pEnc->vInterH, &pEnc->vInterV, &pEnc->vInterHV,
@@ -1037,14 +1058,14 @@ FrameCodeP(Encoder * pEnc,
 	iSearchRange = 1 << (3 + pEnc->mbParam.m_fcode);
 
 	if ((fSigma > iSearchRange / 3)
-		&& (pEnc->mbParam.m_fcode <= 3))	/* maximum search range 128 */
+		&& (pEnc->mbParam.m_fcode <= 3))	// maximum search range 128
 	{
 		pEnc->mbParam.m_fcode++;
 		iSearchRange *= 2;
 	} else if ((fSigma < iSearchRange / 6)
 			   && (pEnc->sStat.fMvPrevSigma >= 0)
 			   && (pEnc->sStat.fMvPrevSigma < iSearchRange / 6)
-			   && (pEnc->mbParam.m_fcode >= 2))	/* minimum search range 16 */
+			   && (pEnc->mbParam.m_fcode >= 2))	// minimum search range 16
 	{
 		pEnc->mbParam.m_fcode--;
 		iSearchRange /= 2;
@@ -1054,6 +1075,6 @@ FrameCodeP(Encoder * pEnc,
 
 	*pBits = BitstreamPos(bs) - *pBits;
 
-	return 0;					/* inter */
+	return 0;					// inter
 
 }

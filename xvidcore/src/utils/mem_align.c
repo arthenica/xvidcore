@@ -4,7 +4,7 @@
  *  - Aligned memory allocator -
  *
  *  Copyright(C) 2002 Michael Militzer <isibaar@xvid.org>
- *               2002 Edouard Gomez <ed.gomez@free.fr>
+ *               2002 Edouard Gomez
  *
  *  This file is part of XviD, a free MPEG-4 video encoder/decoder
  *
@@ -51,7 +51,7 @@
  *  exception also makes it possible to release a modified version which
  *  carries forward this exception.
  *
- * $Id: mem_align.c,v 1.14 2002-12-28 13:53:08 edgomez Exp $
+ * $Id: mem_align.c,v 1.11 2002-11-17 00:51:11 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -88,10 +88,10 @@ xvid_malloc(size_t size,
 		if ((mem_ptr = (uint8_t *) malloc(size + 1)) != NULL) {
 
 			/* Store (mem_ptr - "real allocated memory") in *(mem_ptr-1) */
-			*mem_ptr = 1;
+			*mem_ptr = 0;
 
 			/* Return the mem_ptr pointer */
-			return (void *)(mem_ptr+1);
+			return (void *) mem_ptr++;
 
 		}
 
