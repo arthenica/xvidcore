@@ -20,7 +20,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: estimation_rd_based.c,v 1.14 2005-12-09 04:45:35 syskin Exp $
+ * $Id: estimation_rd_based.c,v 1.13 2005-11-22 10:23:01 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -655,7 +655,8 @@ xvid_me_ModeDecision_RD(SearchData * const Data,
 	}
 
 	for (i = 0; i < 6; i++) {
-		Data->lambda[i] = (LAMBDA*pMB->lambda[i])>>LAMBDA_EXP;
+		/* HVS models, anyone ? */
+		Data->lambda[i] = LAMBDA;
 	}
 
 	min_rd = findRD_inter(Data, x, y, pParam, MotionFlags);
@@ -761,7 +762,8 @@ xvid_me_ModeDecision_Fast(SearchData * const Data,
 	Data->quant_sq = iQuant*iQuant;
 
 	for (i = 0; i < 6; i++) {
-		Data->lambda[i] = (LAMBDA*pMB->lambda[i])>>LAMBDA_EXP;
+		/* HVS models, anyone ? */
+		Data->lambda[i] = LAMBDA;
 	}
 
 	/* INTER <-> INTER4V decision */
