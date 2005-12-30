@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: mbtransquant.c,v 1.31 2005-12-10 05:20:35 syskin Exp $
+ * $Id: mbtransquant.c,v 1.29 2005-11-22 10:23:01 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -183,8 +183,7 @@ dct_quantize_trellis_c(int16_t *const Out,
 					   const uint16_t * const Zigzag,
 					   const uint16_t * const QuantMatrix,
 					   int Non_Zero,
-					   int Sum,
-					   int Lambda_Mod);
+					   int Sum);
 
 /* Quantize all blocks -- Inter mode */
 static __inline uint8_t
@@ -236,8 +235,7 @@ MBQuantInter(const MBParam * pParam,
 										 pMB->quant, &scan_tables[0][0],
 										 matrix,
 										 63,
-										 sum,
-										 pMB->lambda[i]);
+										 sum);
 		}
 		stop_quant_timer();
 
@@ -758,8 +756,6 @@ Find_Last(const int16_t *C, const uint16_t *Zigzag, int i)
 	return -1;
 }
 
-#define TRELLIS_MIN_EFFORT	3
-
 /* this routine has been strippen of all debug code */
 static int
 dct_quantize_trellis_c(int16_t *const Out,
@@ -768,8 +764,7 @@ dct_quantize_trellis_c(int16_t *const Out,
 					   const uint16_t * const Zigzag,
 					   const uint16_t * const QuantMatrix,
 					   int Non_Zero,
-					   int Sum,
-					   int Lambda_Mod)
+					   int Sum)
 {
 
 	/* Note: We should search last non-zero coeffs on *real* DCT input coeffs
@@ -784,7 +779,7 @@ dct_quantize_trellis_c(int16_t *const Out,
 	uint32_t * const Run_Costs = Run_Costs0 + 1;
 
 	/* it's 1/lambda, actually */
-	const int Lambda = (Lambda_Mod*Trellis_Lambda_Tabs[Q-1])>>LAMBDA_EXP;
+	const int Lambda = Trellis_Lambda_Tabs[Q-1];
 
 	int Run_Start = -1;
 	uint32_t Min_Cost = 2<<TL_SHIFT;
@@ -798,8 +793,8 @@ dct_quantize_trellis_c(int16_t *const Out,
 	Run_Costs[-1] = 2<<TL_SHIFT;
 
 	Non_Zero = Find_Last(Out, Zigzag, Non_Zero);
-	if (Non_Zero < TRELLIS_MIN_EFFORT) 
-		Non_Zero = TRELLIS_MIN_EFFORT;
+	if (Non_Zero<0)
+		return 0; /* Sum is zero if there are only zero coeffs */
 
 	for(i=0; i<=Non_Zero; i++) {
 		const int q = ((Q*QuantMatrix[Zigzag[i]])>>4);

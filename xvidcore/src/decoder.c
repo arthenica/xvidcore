@@ -20,7 +20,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: decoder.c,v 1.77 2005-12-30 14:04:49 Isibaar Exp $
+ * $Id: decoder.c,v 1.75.2.1 2005-12-30 14:26:46 Isibaar Exp $
  *
  ****************************************************************************/
 
