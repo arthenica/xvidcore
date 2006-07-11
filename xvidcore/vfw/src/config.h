@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: config.h,v 1.11 2006-07-10 17:39:23 Isibaar Exp $
+ * $Id: config.h,v 1.9.2.1 2006-07-10 17:26:13 Isibaar Exp $
  *
  ****************************************************************************/
 #ifndef _CONFIG_H_
@@ -56,7 +56,7 @@ extern HINSTANCE g_hInst;
 #define XVID_SPECIAL_BUILD	"(Vanilla CVS Build)"
 
 /* constants */
-#define CONFIG_2PASS_FILE ".\\video.pass"
+#define CONFIG_2PASS_FILE "\\video.pass"
 
 /* codec modes */
 #define RC_MODE_1PASS		  0
@@ -244,7 +244,7 @@ typedef struct REG_STR
 #define PROFILE_QPEL		0x00000010
 #define PROFILE_GMC			0x00000020
 #define PROFILE_4MV		    0x00000040
-#define PROFILE_PACKED      0x00000080
+#define PROFILE_PACKED		0x00000080
 #define PROFILE_EXTRA       0x00000100
 
 

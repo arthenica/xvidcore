@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid.h,v 1.55 2006-07-10 17:25:23 Isibaar Exp $
+ * $Id: xvid.h,v 1.51.2.3 2006-07-10 17:25:59 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -57,10 +57,8 @@ extern "C" {
 #define XVID_API_MAJOR(a)        (((a)>>16) & 0xff)
 #define XVID_API_MINOR(a)        (((a)>> 0) & 0xff)
 
-#define XVID_VERSION             XVID_MAKE_VERSION(1,2,-127)
+#define XVID_VERSION             XVID_MAKE_VERSION(1,1,1)
 #define XVID_API                 XVID_MAKE_API(4, 1)
-
-#define XVID_UNSTABLE
 
 /* Bitstream Version
  * this will be writen into the bitstream to allow easy detection of xvid
@@ -73,7 +71,7 @@ extern "C" {
  * doesnt hurt but not increasing it could cause difficulty for decoders in the
  * future
  */
-#define XVID_BS_VERSION 45
+#define XVID_BS_VERSION 44
 
 /*****************************************************************************
  * error codes
@@ -361,7 +359,6 @@ typedef struct {
 #define XVID_REQORIGINAL (1<<0) /* plugin requires a copy of the original (uncompressed) image */
 #define XVID_REQPSNR     (1<<1) /* plugin requires psnr between the uncompressed and compressed image*/
 #define XVID_REQDQUANTS  (1<<2) /* plugin requires access to the dquant table */
-#define XVID_REQLAMBDA   (1<<3) /* plugin requires access to the lambda table */
 
 
 typedef struct
@@ -426,9 +423,6 @@ typedef struct
 	int vop_flags;          /* [in,out] */
 	int vol_flags;          /* [in,out] */
 	int motion_flags;       /* [in,out] */
-
-	/* Lambda table for HVSPlugins */
-	float * lambda;         /* [in,out] six floats for each macroblock. read, multiply, write back */
 
 /* Deprecated, use the stats field instead.
  * Will disapear before 1.0 */

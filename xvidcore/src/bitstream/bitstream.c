@@ -20,7 +20,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: bitstream.c,v 1.56 2006-03-27 11:21:48 Skal Exp $
+ * $Id: bitstream.c,v 1.55.2.1 2006-07-10 15:05:30 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -423,7 +423,6 @@ BitstreamReadHeaders(Bitstream * bs,
 			DPRINTF(XVID_DEBUG_STARTCODE, "</visual_object_sequence>\n");
 
 		} else if (start_code == VISOBJ_START_CODE) {
-
 			DPRINTF(XVID_DEBUG_STARTCODE, "<visual_object>\n");
 
 			BitstreamSkip(bs, 32);	/* visual_object_start_code */
