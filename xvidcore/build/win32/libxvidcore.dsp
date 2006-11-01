@@ -25,7 +25,7 @@ CFG=libxvidcore - Win32 Debug
 # PROP AllowPerConfigDependencies 0
 # PROP Scc_ProjName ""
 # PROP Scc_LocalPath ""
-CPP=icl.exe
+CPP=cl.exe
 MTL=midl.exe
 RSC=rc.exe
 
@@ -43,7 +43,8 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /FD /c
-# ADD CPP /nologo /MT /W3 /GX /O2 /D "NDEBUG" /D "ARCH_IS_IA32" /D "WIN32" /D "_WINDOWS" /D "ARCH_IS_32BIT" /YX /FD /Qipo /c
+# ADD CPP /nologo /MT /W3 /GX /O2 /D "NDEBUG" /D "ARCH_IS_IA32" /D "WIN32" /D "_WINDOWS" /D "ARCH_IS_32BIT" /FD /Qipo /c
+# SUBTRACT CPP /YX
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0xc09 /d "NDEBUG"
@@ -51,7 +52,7 @@ RSC=rc.exe
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
-LINK32=xilink.exe
+LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /dll /machine:I386
 # ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /version:1.0 /subsystem:windows /dll /machine:I386 /out:"bin\xvidcore.dll" /implib:"bin\xvidcore.dll.a"
 
@@ -69,7 +70,8 @@ LINK32=xilink.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /YX /FD /GZ /c
-# ADD CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "ARCH_IS_32BIT" /D "ARCH_IS_IA32" /YX /FD /GZ /c
+# ADD CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "ARCH_IS_32BIT" /D "ARCH_IS_IA32" /FD /GZ /c
+# SUBTRACT CPP /YX
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0xc09 /d "_DEBUG"
@@ -77,7 +79,7 @@ LINK32=xilink.exe
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
-LINK32=xilink.exe
+LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /dll /debug /machine:I386 /pdbtype:sept
 # ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /version:1.0 /subsystem:windows /dll /debug /machine:I386 /out:"bin\xvidcore.dll" /implib:"bin\xvidcore.dll.a" /pdbtype:sept
 
@@ -526,7 +528,7 @@ SOURCE=..\..\src\image\x86_asm\colorspace_rgb_mmx.asm
 !IF  "$(CFG)" == "libxvidcore - Win32 Release"
 
 # Begin Custom Build - Assembling $(InputPath)
-InputDir=\sklmp4\xvidcore\src\image\x86_asm
+InputDir=..\..\src\image\x86_asm
 IntDir=.\Release
 InputPath=..\..\src\image\x86_asm\colorspace_rgb_mmx.asm
 InputName=colorspace_rgb_mmx
@@ -539,7 +541,7 @@ InputName=colorspace_rgb_mmx
 !ELSEIF  "$(CFG)" == "libxvidcore - Win32 Debug"
 
 # Begin Custom Build - Assembling $(InputPath)
-InputDir=\sklmp4\xvidcore\src\image\x86_asm
+InputDir=..\..\src\image\x86_asm
 IntDir=.\Debug
 InputPath=..\..\src\image\x86_asm\colorspace_rgb_mmx.asm
 InputName=colorspace_rgb_mmx
@@ -559,7 +561,7 @@ SOURCE=..\..\src\image\x86_asm\colorspace_yuv_mmx.asm
 !IF  "$(CFG)" == "libxvidcore - Win32 Release"
 
 # Begin Custom Build - Assembling $(InputPath)
-InputDir=\sklmp4\xvidcore\src\image\x86_asm
+InputDir=..\..\src\image\x86_asm
 IntDir=.\Release
 InputPath=..\..\src\image\x86_asm\colorspace_yuv_mmx.asm
 InputName=colorspace_yuv_mmx
@@ -572,7 +574,7 @@ InputName=colorspace_yuv_mmx
 !ELSEIF  "$(CFG)" == "libxvidcore - Win32 Debug"
 
 # Begin Custom Build - Assembling $(InputPath)
-InputDir=\sklmp4\xvidcore\src\image\x86_asm
+InputDir=..\..\src\image\x86_asm
 IntDir=.\Debug
 InputPath=..\..\src\image\x86_asm\colorspace_yuv_mmx.asm
 InputName=colorspace_yuv_mmx
@@ -592,7 +594,7 @@ SOURCE=..\..\src\image\x86_asm\colorspace_yuyv_mmx.asm
 !IF  "$(CFG)" == "libxvidcore - Win32 Release"
 
 # Begin Custom Build - Assembling $(InputPath)
-InputDir=\sklmp4\xvidcore\src\image\x86_asm
+InputDir=..\..\src\image\x86_asm
 IntDir=.\Release
 InputPath=..\..\src\image\x86_asm\colorspace_yuyv_mmx.asm
 InputName=colorspace_yuyv_mmx
@@ -605,75 +607,13 @@ InputName=colorspace_yuyv_mmx
 !ELSEIF  "$(CFG)" == "libxvidcore - Win32 Debug"
 
 # Begin Custom Build - Assembling $(InputPath)
-InputDir=\sklmp4\xvidcore\src\image\x86_asm
+InputDir=..\..\src\image\x86_asm
 IntDir=.\Debug
 InputPath=..\..\src\image\x86_asm\colorspace_yuyv_mmx.asm
 InputName=colorspace_yuyv_mmx
 
 "$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
 	nasm -f win32 -DPREFIX -I"$(InputDir)"\ -o $(IntDir)\$(InputName).obj $(InputPath)
-
-# End Custom Build
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\src\image\x86_asm\deintl_sse.asm
-
-!IF  "$(CFG)" == "libxvidcore - Win32 Release"
-
-# Begin Custom Build - Assembling $(InputPath)
-IntDir=.\Release
-InputPath=..\..\src\image\x86_asm\deintl_sse.asm
-InputName=deintl_sse
-
-"$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	nasm -f win32 -DPREFIX -o $(IntDir)\$(InputName).obj $(InputPath)
-
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "libxvidcore - Win32 Debug"
-
-# Begin Custom Build - Assembling $(InputPath)
-IntDir=.\Debug
-InputPath=..\..\src\image\x86_asm\deintl_sse.asm
-InputName=deintl_sse
-
-"$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	nasm -f win32 -DPREFIX -o $(IntDir)\$(InputName).obj $(InputPath)
-
-# End Custom Build
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\src\image\x86_asm\gmc_mmx.asm
-
-!IF  "$(CFG)" == "libxvidcore - Win32 Release"
-
-# Begin Custom Build - Assembling $(InputPath)
-IntDir=.\Release
-InputPath=..\..\src\image\x86_asm\gmc_mmx.asm
-InputName=gmc_mmx
-
-"$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	nasm -f win32 -DPREFIX -o $(IntDir)\$(InputName).obj $(InputPath)
-
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "libxvidcore - Win32 Debug"
-
-# Begin Custom Build - Assembling $(InputPath)
-IntDir=.\Debug
-InputPath=..\..\src\image\x86_asm\gmc_mmx.asm
-InputName=gmc_mmx
-
-"$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	nasm -f win32 -DPREFIX -o $(IntDir)\$(InputName).obj $(InputPath)
 
 # End Custom Build
 
@@ -1601,41 +1541,6 @@ SOURCE=..\..\src\xvid.h
 
 # PROP Default_Filter ""
 # End Group
-# Begin Group "plugins_asm"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE="..\..\src\plugins\x86_asm\plugin_ssim-a.asm"
-
-!IF  "$(CFG)" == "libxvidcore - Win32 Release"
-
-# Begin Custom Build - Assembling $(InputPath)
-IntDir=.\Release
-InputPath=..\..\src\plugins\x86_asm\plugin_ssim-a.asm
-InputName=plugin_ssim-a
-
-"$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	nasm -f win32 -DPREFIX -o $(IntDir)\$(InputName).obj $(InputPath)
-
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "libxvidcore - Win32 Debug"
-
-# Begin Custom Build - Assembling $(InputPath)
-IntDir=.\Debug
-InputPath=..\..\src\plugins\x86_asm\plugin_ssim-a.asm
-InputName=plugin_ssim-a
-
-"$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	nasm -f win32 -DPREFIX -o $(IntDir)\$(InputName).obj $(InputPath)
-
-# End Custom Build
-
-!ENDIF 
-
-# End Source File
-# End Group
 # Begin Source File
 
 SOURCE=..\..\src\plugins\plugin_2pass1.c
@@ -1659,10 +1564,6 @@ SOURCE=..\..\src\plugins\plugin_psnr.c
 # Begin Source File
 
 SOURCE=..\..\src\plugins\plugin_single.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\src\plugins\plugin_ssim.c
 # End Source File
 # End Group
 # Begin Source File

@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid.c,v 1.70 2006-07-10 08:09:59 syskin Exp $
+ * $Id: xvid.c,v 1.65.2.4 2006-11-01 10:17:27 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -40,7 +40,6 @@
 #include "utils/mbfunctions.h"
 #include "quant/quant.h"
 #include "motion/motion.h"
-#include "motion/gmc.h"
 #include "motion/sad.h"
 #include "utils/emms.h"
 #include "utils/timer.h"
@@ -307,8 +306,6 @@ int xvid_gbl_init(xvid_gbl_init_t * init)
 	sse8_16bit = sse8_16bit_c;
 	sse8_8bit  = sse8_8bit_c;
 
-	init_GMC(cpu_flags);
-
 #if defined(ARCH_IS_IA32)
 
 	if ((cpu_flags & XVID_CPU_MMX) || (cpu_flags & XVID_CPU_MMXEXT) ||
@@ -439,6 +436,7 @@ int xvid_gbl_init(xvid_gbl_init_t * init)
 		interpolate8x8_halfpel_hv_add = interpolate8x8_halfpel_hv_add_xmm;
 
 		/* Quantization */
+		quant_mpeg_intra = quant_mpeg_intra_xmm;
 		quant_mpeg_inter = quant_mpeg_inter_xmm;
 
 		dequant_h263_intra = dequant_h263_intra_xmm;
@@ -675,7 +673,7 @@ int xvid_gbl_init(xvid_gbl_init_t * init)
 		quant_h263_inter   = quant_h263_inter_x86_64;
 		dequant_h263_intra = dequant_h263_intra_x86_64;
 		dequant_h263_inter = dequant_h263_inter_x86_64;
-		/*quant_mpeg_intra   = quant_mpeg_intra_x86_64; fix me! */
+		quant_mpeg_intra   = quant_mpeg_intra_x86_64;
 		quant_mpeg_inter   = quant_mpeg_inter_x86_64;
 		dequant_mpeg_intra   = dequant_mpeg_intra_x86_64;
 		dequant_mpeg_inter   = dequant_mpeg_inter_x86_64;
@@ -714,21 +712,13 @@ xvid_gbl_info(xvid_gbl_info_t * info)
 		return XVID_ERR_VERSION;
 
 	info->actual_version = XVID_VERSION;
-	info->build = "xvid-1.2.0-dev";
+	info->build = "xvid-1.1.2";
 	info->cpu_flags = detect_cpu_flags();
-  info->num_threads = 0;
 
-#if defined(WIN32)
-  {
-    DWORD dwProcessAffinityMask, dwSystemAffinityMask;
-    if (GetProcessAffinityMask(GetCurrentProcess(), &dwProcessAffinityMask, &dwSystemAffinityMask)) {
-      int i;      
-      for(i=0; i<32; i++) {
-        if ((dwProcessAffinityMask & (1<<i)))
-          info->num_threads++;
-      }
-    }
-  }
+#if defined(_SMP) && defined(WIN32)
+	info->num_threads = pthread_num_processors_np();;
+#else
+	info->num_threads = 0;
 #endif
 
 	return 0;

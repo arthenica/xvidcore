@@ -584,8 +584,9 @@ LRESULT compress_begin(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * lpbiO
       if ((create.max_bframes > profiles[codec->config.profile].xvid_max_bframes) && (profiles[codec->config.profile].xvid_max_bframes >= 0))
         create.max_bframes = profiles[codec->config.profile].xvid_max_bframes;
 
-      /* DXN: enable packed bframes */
+      /* dxn: enable packed bframes */
       if ((profiles[codec->config.profile].flags & PROFILE_PACKED)) {
+
         create.global |= XVID_GLOBAL_PACKED;
       }
     }
@@ -630,8 +631,8 @@ LRESULT compress_begin(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * lpbiO
 
 LRESULT compress_end(CODEC * codec)
 {
-  if (codec==NULL)
-    return ICERR_OK;
+    if (codec==NULL)
+      return ICERR_OK;
 
 	if (codec->m_hdll != NULL) {
 		if (codec->ehandle != NULL) {

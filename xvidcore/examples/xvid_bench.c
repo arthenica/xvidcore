@@ -19,7 +19,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid_bench.c,v 1.34 2006-11-01 07:12:26 Skal Exp $
+ * $Id: xvid_bench.c,v 1.27.2.1 2006-11-01 10:01:23 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -557,11 +557,6 @@ void test_mb()
 		printf( " --- \n" );
 	}
 }
-
-#undef ENTER
-#undef LEAVE
-#undef TEST_MB
-#undef TEST_MB2
 
 /*********************************************************************
  * test transfer
@@ -1706,145 +1701,6 @@ void test_quant_bug()
 	}
 #endif
 }
-
-/*********************************************************************
- * test some YUV func
- *********************************************************************/
-  
-#define ENTER \
-for(i=0; i<(int)sizeof(Dst0); ++i) Dst0[0][i] = 0;   \
-t = gettime_usec();                   \
-emms();
-
-#define LEAVE \
-emms();                             \
-t = (gettime_usec() - t) / nb_tests;  \
-	iCrc = calc_crc((uint8_t*)Dst0, sizeof(Dst0), CRC32_INITIAL)
-
-#define TEST_YUYV(FUNC, S)                \
-ENTER                               \
-for(tst=0; tst<nb_tests; ++tst) (FUNC)(Dst0[0], S*WIDTH, Src0[0], Src0[1], Src0[2], WIDTH, WIDTH/2, WIDTH, HEIGHT, 0); \
-LEAVE
-
-#define WIDTH 128
-#define HEIGHT 32
-void test_yuv()
-{
-	const int nb_tests = 200*speed_ref;
-	CPU *cpu;
-	uint8_t Src0[3][WIDTH*HEIGHT];
-	uint8_t Dst0[4][WIDTH*HEIGHT];
-	int i, j;
-	double t;
-	int tst, iCrc;
-
-	colorspace_init();
-	ieee_reseed(1);
-	for(i=0; i<(int)sizeof(Src0); ++i) Src0[0][i] = ieee_rand(0,255);
-	for(i=0; i<(int)sizeof(Dst0); ++i) Dst0[0][i] = 0x5a;
-
-	printf( "\n ===  test YUV ===\n" );
-
-	init_cpu(&cpu_list[0]);
-	TEST_YUYV(yv12_to_yuyv_c, 4);
-	printf(" yv12_to_yuyv_c %.3f usec       crc32=0x%08x %s\n",
-		   t, iCrc, (iCrc!=0xeb1a0b0a)?"| ERROR": "" );
-	TEST_YUYV(yv12_to_uyvy_c, 4);
-	printf(" yv12_to_uyvy_c %.3f usec       crc32=0x%08x %s\n",
-		   t, iCrc, (iCrc!=0x6e82f55b)?"| ERROR": "" );
-
-#ifdef ARCH_IS_IA32
-	init_cpu(&cpu_list[1]);
-	TEST_YUYV(yv12_to_yuyv_mmx, 4);
-	printf(" yv12_to_yuyv_mmx %.3f usec       crc32=0x%08x %s\n",
-		t, iCrc, (iCrc!=0xeb1a0b0a)?"| ERROR": "" );
-
-	TEST_YUYV(yv12_to_uyvy_mmx, 4);
-	printf(" yv12_to_uyvy_mmx %.3f usec       crc32=0x%08x %s\n",
-		t, iCrc, (iCrc!=0x6e82f55b)?"| ERROR": "" );
-#endif
-
-#ifdef ARCH_IS_PPC
-	init_cpu(&cpu_list[1]);
-	TEST_YUYV(yv12_to_yuyv_altivec_c, 4);
-	printf(" yv12_to_yuyv_altivec_c %.3f usec       crc32=0x%08x %s\n",
-		t, iCrc, (iCrc!=0xeb1a0b0a)?"| ERROR": "" );
-
-	TEST_YUYV(yv12_to_uyvy_altivec_c, 4);
-	printf(" yv12_to_uyvy_altivec_c %.3f usec       crc32=0x%08x %s\n",
-		t, iCrc, (iCrc!=0x6e82f55b)?"| ERROR": "" );
-#endif
-	printf( " --- \n" );
-}
-
-#define TEST_YV2(FUNC, WITH_UV, WITH_FLIP)        \
-ENTER                               \
-for(tst=0; tst<nb_tests; ++tst) (FUNC)(Dst0[0], Dst0[1], Dst0[2], WIDTH, WIDTH, \
-	Src0[0], (WITH_UV) ? Src0[1] : 0, (WITH_UV) ? Src0[2] : 0,  WIDTH, WIDTH, \
-	WIDTH-2, HEIGHT-2, WITH_FLIP); \
-LEAVE
-
-#define PRINT_NxN(DATA,W,H,STR)   {   \
-	int i,j; \
-	for(j=0; j<(H); ++j) { \
-		for(i=0; i<(W); ++i) printf( "0x%.2x ", (DATA)[i+j*(STR)] );\
-		printf("\n"); \
-	} \
-	printf("---\n"); \
-}
-
-static const int yv12_CRCs[2][2] = { 
-	{0x5cab7cf0,0xdab46541} 
-,       {0xe8bae865,0x1faf77b7}
-};
-
-void test_yuv2()
-{
-	const int nb_tests = 800*speed_ref;
-	CPU *cpu;
-	uint8_t Src0[3][WIDTH*HEIGHT];
-	uint8_t Dst0[3][WIDTH*HEIGHT];
-	int with_uv, with_flip;
-	int i, j;
-	double t;
-	int tst, iCrc;
-
-	colorspace_init();
-	ieee_reseed(1);
-	for(i=0; i<(int)sizeof(Src0); ++i) Src0[0][i] = ieee_rand(0,255);
-
-	printf( "\n ===  test YV2 ===\n" );
-        for(with_flip=0; with_flip<=1; ++with_flip) {
-        	for(with_uv=0; with_uv<=1; ++with_uv) {
-			init_cpu(&cpu_list[0]);
-			TEST_YV2(yv12_to_yv12_c, with_uv, with_flip);
-			printf(" yv12_to_yv12_c   %.3f usec      \tcrc32=0x%08x %s\n",
-				t, iCrc, (iCrc!=yv12_CRCs[with_flip][with_uv])?"| ERROR": "" );
-			/* if (!with_uv) PRINT_NxN(Dst0[1], WIDTH/2, HEIGHT/2, WIDTH ); */
-
-#ifdef ARCH_IS_IA32
-			init_cpu(&cpu_list[1]);
-			TEST_YV2(yv12_to_yv12_mmx, with_uv, with_flip);
-			printf(" yv12_to_yv12_mmx %.3f usec     \tcrc32=0x%08x %s\n",
-				t, iCrc, (iCrc!=yv12_CRCs[with_flip][with_uv])?"| ERROR": "" );
-			/* if (!with_uv) PRINT_NxN(Dst0[1], WIDTH/2, HEIGHT/2, WIDTH ); */
-
-			TEST_YV2(yv12_to_yv12_xmm, with_uv, with_flip);
-			printf(" yv12_to_yv12_xmm %.3f usec     \tcrc32=0x%08x %s\n",
-				t, iCrc, (iCrc!=yv12_CRCs[with_flip][with_uv])?"| ERROR": "" );
-#endif
-		}
-
-		printf( " --- \n" );
-	}
-	printf( " ===== \n" );
-}
-
-#undef WIDTH
-#undef HEIGHT
-#undef ENTER
-#undef LEAVE
-
 /*********************************************************************/
 
 static uint32_t __inline log2bin_v1(uint32_t value)
@@ -1933,7 +1789,7 @@ static void __inline new_gcd(int *num, int *den)
 
 void test_gcd()
 {
-  const int nb_tests = 10*speed_ref;
+	const int nb_tests = 10*speed_ref;
   int i;
   uint32_t crc1=0, crc2=0;
   uint32_t n0, n, d0, d;
@@ -2012,93 +1868,6 @@ void test_compiler() {
 }
 
 /*********************************************************************
- * test SSIM functions
- *********************************************************************/
-
-typedef int (*lumfunc)(uint8_t* ptr, int stride);
-typedef void (*csfunc)(uint8_t* ptro, uint8_t* ptrc, int stride, int lumo, int lumc, int* pdevo, int* pdevc, int* pcorr);
-
-extern int lum_8x8_c(uint8_t* ptr, int stride);
-extern int lum_8x8_mmx(uint8_t* ptr, int stride);
-extern int lum_2x8_c(uint8_t* ptr, int stride);
-extern void consim_c(uint8_t* ptro, uint8_t* ptrc, int stride, int lumo, int lumc, int* pdevo, int* pdevc, int* pcorr);
-extern void consim_mmx(uint8_t* ptro, uint8_t* ptrc, int stride, int lumo, int lumc, int* pdevo, int* pdevc, int* pcorr);
-extern void consim_sse2(uint8_t* ptro, uint8_t* ptrc, int stride, int lumo, int lumc, int* pdevo, int* pdevc, int* pcorr);
-
-void test_SSIM()
-{
-	const int nb_tests = 3000*speed_ref;
-	int tst;
-	CPU *cpu;
-	int i;
-	int devs[3];
-	long lumo, lumc;
-	DECLARE_ALIGNED_MATRIX(Ref1, 16, 16, uint8_t, 16);
-	DECLARE_ALIGNED_MATRIX(Ref2, 16, 16, uint8_t, 16);
-	lumfunc lum8x8;
-	lumfunc lum2x8;
-	csfunc  csim;
-
-	ieee_reseed(1);
-	printf( "\n ======  test SSIM ======\n" );
-	for(i=0; i<16*16;++i) {
-		long v1, v2;
-		v1 = ieee_rand(-256, 511);
-		v2 = ieee_rand(-256, 511);
-		Ref1[i] = (v1<0) ? 0 : (v1>255) ? 255 : v1;
-		Ref2[i] = (v2<0) ? 0 : (v2>255) ? 255 : v2;
-	}
-	lumc = ieee_rand(0, 255);
-	lumo = ieee_rand(0, 255);
-
-	for(cpu = cpu_list; cpu->name!=0; ++cpu)
-	{
-		double t;
-		int m;
-		if (!init_cpu(cpu))
-			continue;
-		lum8x8 = lum_8x8_c;
-		lum2x8 = lum_2x8_c;
-		csim   = consim_c;
-		if (cpu->cpu & XVID_CPU_MMX){
-			lum8x8 = lum_8x8_mmx;
-			csim = consim_mmx;
-		}
-		if (cpu->cpu & XVID_CPU_MMX){
-			csim = consim_sse2;
-		}
-
-		t = gettime_usec();
-		emms();
-		for(tst=0; tst<nb_tests; ++tst) m = lum8x8(Ref1, 16);
-		emms();
-		t = (gettime_usec() - t) / nb_tests;
-		printf("%s - ssim-lum8x8    %.3f usec       m=%d %s\n",
-			   cpu->name, t, m,
-			   (m!=8230)?"| ERROR": "" );
-
-		t = gettime_usec();
-		emms();
-		for(tst=0; tst<nb_tests; ++tst) m = lum2x8(Ref1+8, 16);
-		emms();
-		t = (gettime_usec() - t) / nb_tests;
-		printf("%s - ssim-lum2x8    %.3f usec       m=%d %s\n",
-			   cpu->name, t, m,
-			   (m!=681)?"| ERROR": "" );
-
-		t = gettime_usec();
-		emms();
-		for(tst=0; tst<nb_tests; ++tst) csim(Ref1, Ref2, 16, lumo, lumc, devs+0, devs+1, devs+2);
-		emms();
-		t = (gettime_usec() - t) / nb_tests;
-		printf("%s - ssim-consim    %.3f usec       devs=[0x%x 0x%x 0x%x] %s\n",
-			   cpu->name, t, devs[0], devs[1], devs[2],
-			   (devs[0]!=0x1bdf0f || devs[1]!=0x137258 ||  devs[2]!=0xcdb13)?"| ERROR": "" );
-		printf( " --- \n" );
-	}
-}
-
-/*********************************************************************
  * test bitstream functions
  *********************************************************************/
 
@@ -2169,7 +1938,7 @@ int main(int argc, const char *argv[])
 	int c, what = 0;
 	int width, height;
 	uint32_t chksum = 0;
-	const char * test_bitstream = 0;
+  const char * test_bitstream = 0;
 
 	cpu_mask = 0;  // default => will use autodectect
 	for(c=1; c<argc; ++c)
@@ -2223,10 +1992,8 @@ int main(int argc, const char *argv[])
 	if (what==0 || what==11) test_log2bin();
 	if (what==0 || what==12) test_gcd();
 	if (what==0 || what==13) test_compiler();
-	if (what==0 || what==14) test_yuv();
-	if (what==0 || what==15) test_SSIM();
-	if (what==0 || what==16) test_yuv2();
 	if (what==0 || what==17) test_bits();
+
 
 	if (what==7) {
 		test_IEEE1180_compliance(-256, 255, 1);

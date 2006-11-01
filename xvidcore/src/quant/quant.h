@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: quant.h,v 1.7 2006-07-10 08:09:59 syskin Exp $
+ * $Id: quant.h,v 1.5.2.1 2006-07-10 15:05:30 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -60,6 +60,7 @@ quant_intraFunc quant_h263_intra_3dne;
 quant_intraFunc quant_h263_intra_sse2;
 
 quant_intraFunc quant_mpeg_intra_mmx;
+quant_intraFunc quant_mpeg_intra_xmm;
 #endif
 
 #ifdef ARCH_IS_IA64
@@ -90,7 +91,7 @@ quant_intraFunc dequant_mpeg_intra_3dne;
 #endif
 
 #ifdef ARCH_IS_IA64
-quant_intraFunc dequant_h263_intra_ia64;
+quant_intraFunc dequant_h263_intra_ia64
 #endif
 
 #ifdef ARCH_IS_PPC
