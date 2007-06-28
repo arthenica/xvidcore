@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: decoder.h,v 1.18 2006-03-27 11:21:48 Skal Exp $
+ * $Id: decoder.h,v 1.17.2.1 2006-07-10 15:05:30 Isibaar Exp $
  *
  ****************************************************************************/
 
