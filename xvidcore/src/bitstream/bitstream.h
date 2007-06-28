@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: bitstream.h,v 1.24 2006-09-03 08:46:56 Skal Exp $
+ * $Id: bitstream.h,v 1.22.2.2 2006-11-01 09:26:52 Isibaar Exp $
  *
  ****************************************************************************/
 

@@ -8,7 +8,7 @@ dnl ==========================================================================
 
 AC_PREREQ([2.50])
 
-AC_INIT([XviD], [1.1.0-beta2], [xvid-devel@xvid.org])
+AC_INIT([XviD], [1.1.0], [xvid-devel@xvid.org])
 AC_CONFIG_SRCDIR(configure.in)
 
 dnl Do not forget to increase that when needed.
@@ -397,12 +397,6 @@ if test "$ARCHITECTURE" = "IA32" -o "$ARCHITECTURE" = "X86_64" ; then
 	       PREFIX="-DPREFIX"
 	       MARK_FUNCS=""
                ;;
-           *darwin*)
-               AC_MSG_RESULT([macho])
-               NASM_FORMAT="macho"
-               PREFIX="-DPREFIX"
-               MARK_FUNCS=""
-               ;;
        esac
 
        AS="$chosen_asm_prog"
@@ -551,26 +545,6 @@ AC_CHECK_HEADERS(
 
 dnl ==========================================================================
 dnl
-dnl Check for pthread
-dnl
-dnl ==========================================================================
-
-AC_CHECK_HEADER(
-	pthread.h,
-	AC_CHECK_LIB(
-		pthread,
-		pthread_create,
-		AC_CHECK_LIB(
-			pthread,
-			pthread_join,
-			SPECIFIC_CFLAGS="$SPECIFIC_CFLAGS -DHAVE_PTHREAD"
-			SPECIFIC_LDFLAGS="$SPECIFIC_LDFLAGS -lpthread",
-			AC_MSG_WARN(Pthread not supported. No SMP support)),
-		AC_MSG_WARN(Pthread not supported. No SMP support)),
-	AC_MSG_WARN(Pthread not supported. No SMP support))
-
-dnl ==========================================================================
-dnl 
 dnl Now we can set CFLAGS if needed
 dnl
 dnl ==========================================================================

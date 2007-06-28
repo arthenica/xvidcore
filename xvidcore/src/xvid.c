@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid.c,v 1.73 2006-12-06 19:55:07 Isibaar Exp $
+ * $Id: xvid.c,v 1.65.2.5 2007-06-27 18:57:42 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -40,7 +40,6 @@
 #include "utils/mbfunctions.h"
 #include "quant/quant.h"
 #include "motion/motion.h"
-#include "motion/gmc.h"
 #include "motion/sad.h"
 #include "utils/emms.h"
 #include "utils/timer.h"
@@ -137,8 +136,8 @@ detect_cpu_flags(void)
 	if ((cpu_flags & XVID_CPU_SSE) && sigill_check(sse_os_trigger))
 		cpu_flags &= ~XVID_CPU_SSE;
 
-	if ((cpu_flags & (XVID_CPU_SSE2|XVID_CPU_SSE3)) && sigill_check(sse2_os_trigger))
-		cpu_flags &= ~(XVID_CPU_SSE2|XVID_CPU_SSE3);
+	if ((cpu_flags & XVID_CPU_SSE2) && sigill_check(sse2_os_trigger))
+		cpu_flags &= ~XVID_CPU_SSE2;
 #endif
 
 #if defined(ARCH_IS_PPC)
@@ -257,7 +256,6 @@ int xvid_gbl_init(xvid_gbl_init_t * init)
 	yv12_to_yv12    = yv12_to_yv12_c;
 	rgb555_to_yv12  = rgb555_to_yv12_c;
 	rgb565_to_yv12  = rgb565_to_yv12_c;
-	rgb_to_yv12     = rgb_to_yv12_c;
 	bgr_to_yv12     = bgr_to_yv12_c;
 	bgra_to_yv12    = bgra_to_yv12_c;
 	abgr_to_yv12    = abgr_to_yv12_c;
@@ -279,7 +277,6 @@ int xvid_gbl_init(xvid_gbl_init_t * init)
 	/* All colorspace transformation functions YV12->User format */
 	yv12_to_rgb555  = yv12_to_rgb555_c;
 	yv12_to_rgb565  = yv12_to_rgb565_c;
-	yv12_to_rgb     = yv12_to_rgb_c;
 	yv12_to_bgr     = yv12_to_bgr_c;
 	yv12_to_bgra    = yv12_to_bgra_c;
 	yv12_to_abgr    = yv12_to_abgr_c;
@@ -308,8 +305,6 @@ int xvid_gbl_init(xvid_gbl_init_t * init)
 	sad16v	   = sad16v_c;
 	sse8_16bit = sse8_16bit_c;
 	sse8_8bit  = sse8_8bit_c;
-
-	init_GMC(cpu_flags);
 
 #if defined(ARCH_IS_IA32)
 
@@ -381,9 +376,7 @@ int xvid_gbl_init(xvid_gbl_init_t * init)
 		/* image input xxx_to_yv12 related functions */
 		yv12_to_yv12  = yv12_to_yv12_mmx;
 		bgr_to_yv12   = bgr_to_yv12_mmx;
-		rgb_to_yv12   = rgb_to_yv12_mmx;
 		bgra_to_yv12  = bgra_to_yv12_mmx;
-		rgba_to_yv12  = rgba_to_yv12_mmx;
 		yuyv_to_yv12  = yuyv_to_yv12_mmx;
 		uyvy_to_yv12  = uyvy_to_yv12_mmx;
 
@@ -443,6 +436,7 @@ int xvid_gbl_init(xvid_gbl_init_t * init)
 		interpolate8x8_halfpel_hv_add = interpolate8x8_halfpel_hv_add_xmm;
 
 		/* Quantization */
+		quant_mpeg_intra = quant_mpeg_intra_xmm;
 		quant_mpeg_inter = quant_mpeg_inter_xmm;
 
 		dequant_h263_intra = dequant_h263_intra_xmm;
@@ -545,15 +539,6 @@ int xvid_gbl_init(xvid_gbl_init_t * init)
 		/* postprocessing */
 		image_brightness = image_brightness_sse2;
 	}
-
-#if 0 // TODO: test...
-	if ((cpu_flags & XVID_CPU_SSE3)) {
-
-		/* SAD operators */
-		sad16    = sad16_sse3;
-		dev16    = dev16_sse3;
-	}
-#endif
 #endif /* ARCH_IS_IA32 */
 
 #if defined(ARCH_IS_IA64)
@@ -688,7 +673,7 @@ int xvid_gbl_init(xvid_gbl_init_t * init)
 		quant_h263_inter   = quant_h263_inter_x86_64;
 		dequant_h263_intra = dequant_h263_intra_x86_64;
 		dequant_h263_inter = dequant_h263_inter_x86_64;
-		/*quant_mpeg_intra   = quant_mpeg_intra_x86_64; fix me! */
+		quant_mpeg_intra   = quant_mpeg_intra_x86_64;
 		quant_mpeg_inter   = quant_mpeg_inter_x86_64;
 		dequant_mpeg_intra   = dequant_mpeg_intra_x86_64;
 		dequant_mpeg_inter   = dequant_mpeg_inter_x86_64;
@@ -727,21 +712,13 @@ xvid_gbl_info(xvid_gbl_info_t * info)
 		return XVID_ERR_VERSION;
 
 	info->actual_version = XVID_VERSION;
-	info->build = "xvid-1.2.0-dev";
+	info->build = "xvid-1.1.3";
 	info->cpu_flags = detect_cpu_flags();
-  info->num_threads = 0;
 
-#if defined(WIN32)
-  {
-    DWORD dwProcessAffinityMask, dwSystemAffinityMask;
-    if (GetProcessAffinityMask(GetCurrentProcess(), &dwProcessAffinityMask, &dwSystemAffinityMask)) {
-      int i;      
-      for(i=0; i<32; i++) {
-        if ((dwProcessAffinityMask & (1<<i)))
-          info->num_threads++;
-      }
-    }
-  }
+#if defined(_SMP) && defined(WIN32)
+	info->num_threads = pthread_num_processors_np();;
+#else
+	info->num_threads = 0;
 #endif
 
 	return 0;

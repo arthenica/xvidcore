@@ -20,7 +20,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: bitstream.c,v 1.57 2007-04-16 19:01:28 Skal Exp $
+ * $Id: bitstream.c,v 1.55.2.1 2006-07-10 15:05:30 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -423,7 +423,6 @@ BitstreamReadHeaders(Bitstream * bs,
 			DPRINTF(XVID_DEBUG_STARTCODE, "</visual_object_sequence>\n");
 
 		} else if (start_code == VISOBJ_START_CODE) {
-
 			DPRINTF(XVID_DEBUG_STARTCODE, "<visual_object>\n");
 
 			BitstreamSkip(bs, 32);	/* visual_object_start_code */
@@ -1443,7 +1442,7 @@ void write_video_packet_header(Bitstream * const bs,
     else if (frame->coding_type == P_VOP)
       nbitsresyncmarker = NUMBITS_VP_RESYNC_MARKER-1 + frame->fcode;
     else /* B_VOP */
-      nbitsresyncmarker = MAX(NUMBITS_VP_RESYNC_MARKER+1, NUMBITS_VP_RESYNC_MARKER-1 + MAX(frame->fcode, frame->bcode));
+      nbitsresyncmarker = MAX(NUMBITS_VP_RESYNC_MARKER, NUMBITS_VP_RESYNC_MARKER-1 + MAX(frame->fcode, frame->bcode));
 
     BitstreamPadAlways(bs);
     BitstreamPutBits(bs, RESYNC_MARKER, nbitsresyncmarker);

@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: encoder.c,v 1.130 2007-02-08 13:10:24 Isibaar Exp $
+ * $Id: encoder.c,v 1.120.2.1 2006-07-10 15:05:30 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -48,9 +48,6 @@
 #include "bitstream/mbcoding.h"
 #include "quant/quant_matrix.h"
 #include "utils/mem_align.h"
-
-# include "motion/motion_smp.h"
-
 
 /*****************************************************************************
  * Local function prototypes
@@ -138,7 +135,7 @@ int
 enc_create(xvid_enc_create_t * create)
 {
 	Encoder *pEnc;
-	int n;
+  int n;
 
 	if (XVID_VERSION_MAJOR(create->version) != 1) /* v1.x.x */
 		return XVID_ERR_VERSION;
@@ -238,14 +235,6 @@ enc_create(xvid_enc_create_t * create)
 		pEnc->temp_dquants = (int *) xvid_malloc(pEnc->mbParam.mb_width *
 						pEnc->mbParam.mb_height * sizeof(int), CACHE_LINE);
 		if (pEnc->temp_dquants==NULL)
-			goto xvid_err_memory1a;
-	}
-
-	/* temp lambdas */
-	if (pEnc->mbParam.plugin_flags & XVID_REQLAMBDA) {
-		pEnc->temp_lambda = (float *) xvid_malloc(pEnc->mbParam.mb_width *
-						pEnc->mbParam.mb_height * 6 * sizeof(float), CACHE_LINE);
-		if (pEnc->temp_lambda == NULL)
 			goto xvid_err_memory1a;
 	}
 
@@ -444,36 +433,6 @@ enc_create(xvid_enc_create_t * create)
 	pEnc->iFrameNum = 0;
 	pEnc->fMvPrevSigma = -1;
 
-	/* multithreaded stuff */
-	if (create->num_threads > 0) {
-		int t = create->num_threads;
-		int rows_per_thread = (pEnc->mbParam.mb_height+t-1)/t;
-		pEnc->num_threads = t;
-		pEnc->motionData = xvid_malloc(t*sizeof(SMPmotionData), CACHE_LINE);
-		if (!pEnc->motionData) 
-			goto xvid_err_nosmp;
-		
-		for (n = 0; n < t; n++) {
-			pEnc->motionData[n].complete_count_self =
-				xvid_malloc(rows_per_thread * sizeof(int), CACHE_LINE);
-
-			if (!pEnc->motionData[n].complete_count_self)
-				goto xvid_err_nosmp;
-		
-			if (n != 0) 
-				pEnc->motionData[n].complete_count_above = 
-					pEnc->motionData[n-1].complete_count_self;
-		}
-		pEnc->motionData[0].complete_count_above =
-			pEnc->motionData[t-1].complete_count_self - 1;
-
-	} else {
-  xvid_err_nosmp:
-		/* no SMP */
-		create->num_threads = 0;
-		pEnc->motionData = NULL;
-	}
-
 	create->handle = (void *) pEnc;
 
 	init_timer();
@@ -558,10 +517,6 @@ enc_create(xvid_enc_create_t * create)
   xvid_err_memory1a:
 	if ((pEnc->mbParam.plugin_flags & XVID_REQDQUANTS)) {
 		xvid_free(pEnc->temp_dquants);
-	}
-
-	if(pEnc->mbParam.plugin_flags & XVID_REQLAMBDA) {
-		xvid_free(pEnc->temp_lambda);
 	}
 
   xvid_err_memory0:
@@ -662,9 +617,6 @@ enc_destroy(Encoder * pEnc)
 		xvid_free(pEnc->temp_dquants);
 	}
 
-	if ((pEnc->mbParam.plugin_flags & XVID_REQLAMBDA)) {
-		xvid_free(pEnc->temp_lambda);
-	}
 
 	if (pEnc->num_plugins>0) {
 		xvid_plg_destroy_t pdestroy;
@@ -683,15 +635,8 @@ enc_destroy(Encoder * pEnc)
 
 	xvid_free(pEnc->mbParam.mpeg_quant_matrices);
 
-	if (pEnc->num_zones > 0)
+	if (pEnc->num_plugins>0)
 		xvid_free(pEnc->zones);
-
-	if (pEnc->num_threads > 0) {
-		for (i = 0; i < pEnc->num_threads; i++)
-			xvid_free(pEnc->motionData[i].complete_count_self);
-
-		xvid_free(pEnc->motionData);
-	}
 
 	xvid_free(pEnc);
 
@@ -706,7 +651,7 @@ enc_destroy(Encoder * pEnc)
 static void call_plugins(Encoder * pEnc, FRAMEINFO * frame, IMAGE * original,
 						 int opt, int * type, int * quant, xvid_enc_stats_t * stats)
 {
-	unsigned int i, j, k;
+	unsigned int i, j;
 	xvid_plg_data_t data;
 
 	/* set data struct */
@@ -765,19 +710,9 @@ static void call_plugins(Encoder * pEnc, FRAMEINFO * frame, IMAGE * original,
 		if ((pEnc->mbParam.plugin_flags & XVID_REQDQUANTS)) {
 			data.dquant = pEnc->temp_dquants;
 			data.dquant_stride = pEnc->mbParam.mb_width;
-			memset(data.dquant, 0, data.mb_width*data.mb_height*sizeof(int));
+			memset(data.dquant, 0, data.mb_width*data.mb_height);
 		}
-
-		if(pEnc->mbParam.plugin_flags & XVID_REQLAMBDA) {
-			int block = 0;
-			emms();
-			data.lambda = pEnc->temp_lambda;
-			for(i = 0;i < pEnc->mbParam.mb_height; i++)
-				for(j = 0;j < pEnc->mbParam.mb_width; j++)
-					for (k = 0; k < 6; k++) 
-						data.lambda[block++] = 1.0f;
-		}
-
+	
 	} else { /* XVID_PLG_AFTER */
 		if ((pEnc->mbParam.plugin_flags & XVID_REQORIGINAL)) {
 			data.original.csp = XVID_CSP_PLANAR;
@@ -881,23 +816,6 @@ static void call_plugins(Encoder * pEnc, FRAMEINFO * frame, IMAGE * original,
 				frame->mbs[j*pEnc->mbParam.mb_width + i].dquant = 0;
 			}
 		}
-
-		if (pEnc->mbParam.plugin_flags & XVID_REQLAMBDA) {
-			for (j = 0; j < pEnc->mbParam.mb_height; j++)
-				for (i = 0; i < pEnc->mbParam.mb_width; i++)
-					for (k = 0; k < 6; k++) {
-						frame->mbs[j*pEnc->mbParam.mb_width + i].lambda[k] = 
-							(int) ((float)(1<<LAMBDA_EXP) * data.lambda[6 * (j * data.mb_width + i) + k]);
-			}
-		} else {
-			for (j = 0; j<pEnc->mbParam.mb_height; j++)
-				for (i = 0; i<pEnc->mbParam.mb_width; i++)
-					for (k = 0; k < 6; k++) {
-						frame->mbs[j*pEnc->mbParam.mb_width + i].lambda[k] = 1<<LAMBDA_EXP;
-			}
-		}
-
-
 		frame->mbs[0].quant = data.quant; /* FRAME will not affect the quant in stats */
 	}
 
@@ -1307,9 +1225,8 @@ repeat:
 		if (pEnc->current->stamp > 0) {
 			call_plugins(pEnc, pEnc->reference, &pEnc->sOriginal, XVID_PLG_AFTER, NULL, NULL, stats);
 		}
-        else if (stats) {
-            stats->type = XVID_TYPE_NOTHING;
-        }
+		else
+			stats->type = XVID_TYPE_NOTHING;
 	}
 
 	/* %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1541,7 +1458,6 @@ FrameCodeI(Encoder * pEnc,
 	BitstreamWriteVopHeader(bs, &pEnc->mbParam, pEnc->current, 1, pEnc->current->mbs[0].quant);
 
 	pEnc->current->sStat.iTextBits = 0;
-	pEnc->current->sStat.iMVBits = 0;
 	pEnc->current->sStat.kblks = mb_width * mb_height;
 	pEnc->current->sStat.mblks = pEnc->current->sStat.ublks = 0;
 
@@ -1640,8 +1556,8 @@ FrameCodeP(Encoder * pEnc,
 	if ((current->vop_flags & XVID_VOP_HALFPEL)) {
 		if (reference->is_interpolated != current->rounding_type) {
 			start_timer();
-			image_interpolate(pRef->y, pEnc->vInterH.y, pEnc->vInterV.y,
-							  pEnc->vInterHV.y, pParam->edged_width,
+			image_interpolate(pRef, &pEnc->vInterH, &pEnc->vInterV,
+							  &pEnc->vInterHV, pParam->edged_width,
 							  pParam->edged_height,
 							  (pParam->vol_flags & XVID_VOL_QUARTERPEL),
 							  current->rounding_type);
@@ -1651,8 +1567,7 @@ FrameCodeP(Encoder * pEnc,
 	}
 
 	current->sStat.iTextBits = current->sStat.iMvSum = current->sStat.iMvCount =
-		current->sStat.kblks = current->sStat.mblks = current->sStat.ublks = 
-		current->sStat.iMVBits = 0;
+		current->sStat.kblks = current->sStat.mblks = current->sStat.ublks = 0;
 
 	current->coding_type = P_VOP;
 
@@ -1711,54 +1626,10 @@ FrameCodeP(Encoder * pEnc,
 		}
 	}
 
+	MotionEstimation(&pEnc->mbParam, current, reference,
+					 &pEnc->vInterH, &pEnc->vInterV, &pEnc->vInterHV,
+					 &pEnc->vGMC, 256*4096);
 
-	if (pEnc->num_threads > 0) {
-		/* multithreaded motion estimation - dispatch threads */
-
-		void * status;
-		int rows_per_thread = (pParam->mb_height + pEnc->num_threads - 1)/pEnc->num_threads;
-
-		for (k = 0; k < pEnc->num_threads; k++) {
-			memset(pEnc->motionData[k].complete_count_self, 0, rows_per_thread * sizeof(int));
-			pEnc->motionData[k].pParam = &pEnc->mbParam;
-			pEnc->motionData[k].current = current;
-			pEnc->motionData[k].reference = reference;
-			pEnc->motionData[k].pRefH = &pEnc->vInterH;
-			pEnc->motionData[k].pRefV = &pEnc->vInterV;
-			pEnc->motionData[k].pRefHV = &pEnc->vInterHV;
-			pEnc->motionData[k].pGMC = &pEnc->vGMC;
-			pEnc->motionData[k].y_step = pEnc->num_threads;
-			pEnc->motionData[k].start_y = k;
-			/* todo: sort out temp space once and for all */
-			pEnc->motionData[k].RefQ = pEnc->vInterH.u + 16*k*pParam->edged_width;
-		}
-
-		for (k = 1; k < pEnc->num_threads; k++) {
-			pthread_create(&pEnc->motionData[k].handle, NULL, 
-				(void*)MotionEstimateSMP, (void*)&pEnc->motionData[k]);
-		}
-
-		MotionEstimateSMP(&pEnc->motionData[0]);
-
-		for (k = 1; k < pEnc->num_threads; k++) {
-			pthread_join(pEnc->motionData[k].handle, &status);
-		}
-
-		current->fcode = 0;
-		for (k = 0; k < pEnc->num_threads; k++) {
-			current->sStat.iMvSum += pEnc->motionData[k].mvSum;
-			current->sStat.iMvCount += pEnc->motionData[k].mvCount;
-			if (pEnc->motionData[k].minfcode > current->fcode)
-				current->fcode = pEnc->motionData[k].minfcode;
-		}
-
-	} else {
-		/* regular ME */
-
-		MotionEstimation(&pEnc->mbParam, current, reference,
-						 &pEnc->vInterH, &pEnc->vInterV, &pEnc->vInterHV,
-						 &pEnc->vGMC, 256*4096);
-	}
 
 	stop_motion_timer();
 
@@ -1978,7 +1849,7 @@ FrameCodeB(Encoder * pEnc,
 
 	if (pEnc->reference->is_interpolated != 0) {
 		start_timer();
-		image_interpolate(f_ref->y, pEnc->f_refh.y, pEnc->f_refv.y, pEnc->f_refhv.y,
+		image_interpolate(f_ref, &pEnc->f_refh, &pEnc->f_refv, &pEnc->f_refhv,
 						  pEnc->mbParam.edged_width, pEnc->mbParam.edged_height,
 						  (pEnc->mbParam.vol_flags & XVID_VOL_QUARTERPEL), 0);
 		stop_inter_timer();
@@ -1995,7 +1866,7 @@ FrameCodeB(Encoder * pEnc,
 
 	if (pEnc->current->is_interpolated != 0) {
 		start_timer();
-		image_interpolate(b_ref->y, pEnc->vInterH.y, pEnc->vInterV.y, pEnc->vInterHV.y,
+		image_interpolate(b_ref, &pEnc->vInterH, &pEnc->vInterV, &pEnc->vInterHV,
 						pEnc->mbParam.edged_width, pEnc->mbParam.edged_height,
 						(pEnc->mbParam.vol_flags & XVID_VOL_QUARTERPEL), 0);
 		stop_inter_timer();
@@ -2003,72 +1874,22 @@ FrameCodeB(Encoder * pEnc,
 	}
 
 	frame->coding_type = B_VOP;
-	call_plugins(pEnc, frame, NULL, XVID_PLG_FRAME, NULL, NULL, NULL);
-
-	frame->fcode = frame->bcode = pEnc->current->fcode;
+	call_plugins(pEnc, pEnc->current, NULL, XVID_PLG_FRAME, NULL, NULL, NULL);
 
 	start_timer();
-	if (pEnc->num_threads > 0) {
-		void * status;
-		int k;
-		/* multithreaded motion estimation - dispatch threads */
-		int rows_per_thread = (pEnc->mbParam.mb_height + pEnc->num_threads - 1)/pEnc->num_threads;
-
-		for (k = 0; k < pEnc->num_threads; k++) {
-			memset(pEnc->motionData[k].complete_count_self, 0, rows_per_thread * sizeof(int));
-			pEnc->motionData[k].pParam = &pEnc->mbParam;
-			pEnc->motionData[k].current = frame;
-			pEnc->motionData[k].reference = pEnc->current;
-			pEnc->motionData[k].fRef = f_ref;
-			pEnc->motionData[k].fRefH = &pEnc->f_refh;
-			pEnc->motionData[k].fRefV = &pEnc->f_refv;
-			pEnc->motionData[k].fRefHV = &pEnc->f_refhv;
-			pEnc->motionData[k].pRef = b_ref;
-			pEnc->motionData[k].pRefH = &pEnc->vInterH;
-			pEnc->motionData[k].pRefV = &pEnc->vInterV;
-			pEnc->motionData[k].pRefHV = &pEnc->vInterHV;
-			pEnc->motionData[k].time_bp = (int32_t)(pEnc->current->stamp - frame->stamp);
-			pEnc->motionData[k].time_pp = (int32_t)(pEnc->current->stamp - pEnc->reference->stamp);
-			pEnc->motionData[k].y_step = pEnc->num_threads;
-			pEnc->motionData[k].start_y = k;
-			/* todo: sort out temp space once and for all */
-			pEnc->motionData[k].RefQ = pEnc->vInterH.u + 16*k*pEnc->mbParam.edged_width;
-		}
-
-		for (k = 1; k < pEnc->num_threads; k++) {
-			pthread_create(&pEnc->motionData[k].handle, NULL, 
-				(void*)SMPMotionEstimationBVOP, (void*)&pEnc->motionData[k]);
-		}
-
-		SMPMotionEstimationBVOP(&pEnc->motionData[0]);
-
-		for (k = 1; k < pEnc->num_threads; k++) {
-			pthread_join(pEnc->motionData[k].handle, &status);
-		}
-
-		frame->fcode = frame->bcode = 0;
-		for (k = 0; k < pEnc->num_threads; k++) {
-			if (pEnc->motionData[k].minfcode > frame->fcode)
-				frame->fcode = pEnc->motionData[k].minfcode;
-			if (pEnc->motionData[k].minbcode > frame->bcode)
-				frame->bcode = pEnc->motionData[k].minbcode;
-		}
-	} else {
-		MotionEstimationBVOP(&pEnc->mbParam, frame,
-							 ((int32_t)(pEnc->current->stamp - frame->stamp)),				/* time_bp */
-							 ((int32_t)(pEnc->current->stamp - pEnc->reference->stamp)), 	/* time_pp */
-							 pEnc->reference->mbs, f_ref,
-							 &pEnc->f_refh, &pEnc->f_refv, &pEnc->f_refhv,
-							 pEnc->current, b_ref, &pEnc->vInterH,
-							 &pEnc->vInterV, &pEnc->vInterHV);
-	}
+	MotionEstimationBVOP(&pEnc->mbParam, frame,
+						 ((int32_t)(pEnc->current->stamp - frame->stamp)),				/* time_bp */
+						 ((int32_t)(pEnc->current->stamp - pEnc->reference->stamp)), 	/* time_pp */
+						 pEnc->reference->mbs, f_ref,
+						 &pEnc->f_refh, &pEnc->f_refv, &pEnc->f_refhv,
+						 pEnc->current, b_ref, &pEnc->vInterH,
+						 &pEnc->vInterV, &pEnc->vInterHV);
 	stop_motion_timer();
 
 	set_timecodes(frame, pEnc->reference,pEnc->mbParam.fbase);
 	BitstreamWriteVopHeader(bs, &pEnc->mbParam, frame, 1, frame->quant);
 
 	frame->sStat.iTextBits = 0;
-	frame->sStat.iMVBits = 0;
 	frame->sStat.iMvSum = 0;
 	frame->sStat.iMvCount = 0;
 	frame->sStat.kblks = frame->sStat.mblks = frame->sStat.ublks = 0;
@@ -2119,6 +1940,7 @@ FrameCodeB(Encoder * pEnc,
 			stop_coding_timer();
 		}
 	}
+
 	emms();
 
 	BitstreamPadAlways(bs); /* next_start_code() at the end of VideoObjectPlane() */
