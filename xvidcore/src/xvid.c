@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid.c,v 1.79 2008-11-30 16:36:44 Isibaar Exp $
+ * $Id: xvid.c,v 1.77.2.2 2008-11-30 16:38:31 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -661,7 +661,7 @@ xvid_gbl_info(xvid_gbl_info_t * info)
 		return XVID_ERR_VERSION;
 
 	info->actual_version = XVID_VERSION;
-	info->build = "xvid-1.3.0-dev";
+	info->build = "xvid-1.2.0";
 	info->cpu_flags = detect_cpu_flags();
 	info->num_threads = 0;
 
