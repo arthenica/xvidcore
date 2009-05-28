@@ -20,7 +20,7 @@
 ; *  along with this program; if not, write to the Free Software
 ; *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 ; *
-; * $Id: gmc_mmx.asm,v 1.10 2008-12-04 14:41:50 Isibaar Exp $
+; * $Id: gmc_mmx.asm,v 1.7.2.3 2009-05-28 08:42:37 Isibaar Exp $
 ; *
 ; *************************************************************************/
 

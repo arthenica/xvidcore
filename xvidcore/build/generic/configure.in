@@ -8,12 +8,12 @@ dnl ==========================================================================
 
 AC_PREREQ([2.50])
 
-AC_INIT([Xvid], [1.3.0], [xvid-devel@xvid.org])
+AC_INIT([Xvid], [1.2.2], [xvid-devel@xvid.org])
 AC_CONFIG_SRCDIR(configure.in)
 
 dnl Do not forget to increase that when needed.
 API_MAJOR="4"
-API_MINOR="3"
+API_MINOR="2"
 
 dnl NASM/YASM version requirement
 minimum_yasm_minor_version=8
@@ -455,7 +455,7 @@ dnl intrinsic altivec functions and types as they are supported by both Apple
 dnl and GNU gcc with very slight changes to code which can be sumed up by:
 dnl
 dnl Apple:
-dnl  - compile with the option -arch ppc -faltivec 
+dnl  - compile with the option -arch ppc -faltivec
 dnl  - define vectors with parentheses vec = (0,0,0,0)
 dnl GNU
 dnl  - compile with -maltivec -mabi=altivec

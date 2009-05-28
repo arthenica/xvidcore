@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid.h,v 1.65 2009-05-27 15:52:05 Isibaar Exp $
+ * $Id: xvid.h,v 1.63.2.3 2009-05-25 08:09:23 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -57,10 +57,8 @@ extern "C" {
 #define XVID_API_MAJOR(a)        (((a)>>16) & 0xff)
 #define XVID_API_MINOR(a)        (((a)>> 0) & 0xff)
 
-#define XVID_VERSION             XVID_MAKE_VERSION(1,3,-127)
-#define XVID_API                 XVID_MAKE_API(4, 3)
-
-#define XVID_UNSTABLE
+#define XVID_VERSION             XVID_MAKE_VERSION(1,2,2)
+#define XVID_API                 XVID_MAKE_API(4, 2)
 
 /* Bitstream Version
  * this will be writen into the bitstream to allow easy detection of xvid
@@ -73,7 +71,7 @@ extern "C" {
  * doesnt hurt but not increasing it could cause difficulty for decoders in the
  * future
  */
-#define XVID_BS_VERSION 55 
+#define XVID_BS_VERSION 50 
 
 /*****************************************************************************
  * error codes
@@ -558,12 +556,6 @@ typedef struct{
     int cpu_flags; /* XVID_CPU_XXX flags */
 
 } xvid_plugin_ssim_t;
-
-typedef struct {
-        int version;
-
-        int method;      /* [in] masking method to apply. 0 for luminance masking, 1 for variance masking */
-} xvid_plugin_lumimasking_t;
 
 /*****************************************************************************
  *                             ENCODER API

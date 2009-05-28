@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid.c,v 1.80 2008-12-01 15:06:48 Isibaar Exp $
+ * $Id: xvid.c,v 1.77.2.5 2009-05-25 08:09:23 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -29,7 +29,7 @@
 #include <time.h>
 
 #if !defined(_WIN32)
-#include <unistd.h>
+  #include <unistd.h>
 #endif
 
 #include "xvid.h"
@@ -665,7 +665,7 @@ xvid_gbl_info(xvid_gbl_info_t * info)
 		return XVID_ERR_VERSION;
 
 	info->actual_version = XVID_VERSION;
-	info->build = "xvid-1.3.0-dev";
+	info->build = "xvid-1.2.2";
 	info->cpu_flags = detect_cpu_flags();
 	info->num_threads = 0;
 

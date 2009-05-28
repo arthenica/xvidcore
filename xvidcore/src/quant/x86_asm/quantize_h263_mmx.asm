@@ -21,7 +21,7 @@
 ; *  along with this program ; if not, write to the Free Software
 ; *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 ; *
-; * $Id: quantize_h263_mmx.asm,v 1.15 2008-12-04 18:30:36 Isibaar Exp $
+; * $Id: quantize_h263_mmx.asm,v 1.11.2.3 2009-05-28 08:42:37 Isibaar Exp $
 ; *
 ; ****************************************************************************/
 
@@ -121,7 +121,7 @@ quant_h263_intra_mmx:
   movsx _EAX, word [_EAX]  ; data[0]
   
   sar TMP0, 1              ; dcscalar /2
-  mov TMP1, _EAX 
+  mov TMP1, _EAX
   sar TMP1, 31             ; sgn(data[0])
   xor TMP0,TMP1            ; *sgn(data[0])
   sub _EAX,TMP1
@@ -253,7 +253,7 @@ quant_h263_intra_sse2:
   movsx _EAX, word [_EAX]      ; data[0]
  
   mov TMP0,prm4     ; dcscalar
-  mov TMP1, _EAX 
+  mov TMP1,_EAX
   sar TMP0,1
   add _EAX,TMP0
   sub TMP1,TMP0
@@ -491,7 +491,8 @@ quant_h263_inter_sse2:
   pxor xmm5, xmm5                           ; sum
 
   lea TMP0, [mmx_sub]
-  movq xmm6, [TMP0 + _EAX*8 - 8]             ; sub
+  movq mm0, [TMP0 + _EAX*8 - 8]             ; sub
+  movq2dq xmm6, mm0                         ; load into low 8 bytes
   movlhps xmm6, xmm6                        ; duplicate into high 8 bytes
 
   cmp al, 1
@@ -499,11 +500,12 @@ quant_h263_inter_sse2:
 
 .qes2_not1:
   lea TMP0, [mmx_div]
-  movq xmm7, [TMP0 + _EAX*8 - 8]          ; divider
+  movq mm0, [TMP0 + _EAX*8 - 8]          ; divider
 
   xor TMP0, TMP0
   mov _EAX, prm2      ; data
 
+  movq2dq xmm7, mm0
   movlhps xmm7, xmm7
 
 ALIGN SECTION_ALIGN
@@ -536,7 +538,7 @@ ALIGN SECTION_ALIGN
   jnz .qes2_loop
 
 .qes2_done:
-  movdqa xmm6, [plus_one]
+  movdqu xmm6, [plus_one]
   pmaddwd xmm5, xmm6
   movhlps xmm6, xmm5
   paddd xmm5, xmm6

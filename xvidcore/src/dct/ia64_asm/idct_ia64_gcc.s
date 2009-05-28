@@ -19,7 +19,7 @@
 // *  along with this program; if not, write to the Free Software
 // *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 // *
-// * $Id: idct_ia64_gcc.s,v 1.2 2009-02-19 17:07:29 Isibaar Exp $
+// * $Id: idct_ia64_gcc.s,v 1.1.14.1 2009-05-25 09:03:47 Isibaar Exp $
 // *
 // ***************************************************************************/
 //

@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- *  $Id: motion.h,v 1.25 2009-02-18 15:10:27 Isibaar Exp $
+ *  $Id: motion.h,v 1.24.2.1 2009-05-25 09:03:47 Isibaar Exp $
  *
  ***************************************************************************/
 

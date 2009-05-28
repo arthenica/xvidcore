@@ -19,7 +19,7 @@
 ; *  along with this program; if not, write to the Free Software
 ; *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 ; *
-; * $Id: reduced_mmx.asm,v 1.11 2008-12-04 14:41:50 Isibaar Exp $
+; * $Id: reduced_mmx.asm,v 1.9.2.1 2009-05-28 08:42:37 Isibaar Exp $
 ; *
 ; *************************************************************************/
 
@@ -735,7 +735,7 @@ xvid_HFilter_31_mmx:
   packuswb mm1, mm7
   movd [TMP0+_EAX*4], mm0
   movd [TMP1+_EAX*4], mm1
-  inc _EAX
+  add _EAX,1
   jl .Loop
 
   ret

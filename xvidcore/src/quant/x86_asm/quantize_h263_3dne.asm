@@ -19,7 +19,7 @@
 ; *  along with this program ; if not, write to the Free Software
 ; *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 ; *
-; * $Id: quantize_h263_3dne.asm,v 1.11 2008-12-04 18:30:36 Isibaar Exp $
+; * $Id: quantize_h263_3dne.asm,v 1.9.2.2 2009-05-28 15:04:35 Isibaar Exp $
 ; *
 ; *************************************************************************/
 ;
@@ -136,6 +136,7 @@ int_2048:
 ;=============================================================================
 
 TEXT
+
 
 ;-----------------------------------------------------------------------------
 ;
@@ -351,18 +352,18 @@ quant_h263_intra_3dne:
   mov _EBP, [_ESP + (4+4)*PTR_SIZE]   ; dcscalar
                                     ; NB -- there are 3 pushes in the function preambule and one more
                                     ; in "quant_intra 0", thus an added offset of 16 bytes
-  movsx _EAX, word [byte _ECX]      ; DC
+  movsx _EAX, word [byte _ECX]        ; DC
 
   quant_intra 1
-  mov _EDI, _EAX 
-  sar _EDI, 31                        ; sign(DC)
-  shr _EBP, byte 1                    ; _EBP = dcscalar/2
+  mov _EDI, _EAX
+  sar _EDI, 31                       ; sign(DC)
+  shr _EBP, byte 1                   ; _EBP = dcscalar/2
 
   quant_intra 2
   sub _EAX, _EDI                      ; DC (+1)
   xor _EBP, _EDI                      ; sign(DC) dcscalar /2  (-1)
   mov _EDI, [_ESP + (4+4)*PTR_SIZE]   ; dscalar
-  lea _EAX, [byte _EAX + _EBP]        ; DC + sign(DC) dcscalar/2
+  lea _EAX, [byte _EAX + _EBP]         ; DC + sign(DC) dcscalar/2
   mov _EBP, [byte _ESP]
 
   quant_intra 3
@@ -401,15 +402,15 @@ ALIGN SECTION_ALIGN
   movsx _EAX, word [byte _ECX]        ; DC
 
   quant_intra1 1
-  mov _EDI, _EAX 
-  sar _EDI, 31                        ; sign(DC)
-  shr _EBP, byte 1                    ; _EBP = dcscalar /2
+  mov _EDI, _EAX
+  sar _EDI, 31                       ; sign(DC)
+  shr _EBP, byte 1                   ; _EBP = dcscalar /2
 
   quant_intra1 2
   sub _EAX, _EDI                      ; DC (+1)
   xor _EBP, _EDI                      ; sign(DC) dcscalar /2  (-1)
   mov _EDI, [_ESP + (4+4)*PTR_SIZE]   ; dcscalar
-  lea _EAX, [byte _EAX + _EBP]        ; DC + sign(DC) dcscalar /2
+  lea _EAX, [byte _EAX + _EBP]         ; DC + sign(DC) dcscalar /2
   mov _EBP, [byte _ESP]
 
   quant_intra1 3

@@ -20,7 +20,7 @@
 ; *  along with this program ; if not, write to the Free Software
 ; *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 ; *
-; * $Id: quantize_mpeg_xmm.asm,v 1.12 2008-12-04 18:30:36 Isibaar Exp $
+; * $Id: quantize_mpeg_xmm.asm,v 1.10.2.2 2009-05-28 15:04:35 Isibaar Exp $
 ; *
 ; ***************************************************************************/
 

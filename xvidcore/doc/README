@@ -1,18 +1,17 @@
-Documentation of Xvid
+Documentation of XviD
 =====================
 
 INSTALL
 -------
 
-This file describes the steps to build and install Xvid on supported
+This file describes the steps to build and install XviD on supported
 platforms.
 
 NOTE FOR MacOS X PLATFORM
 -------------------------
 
-Many versions of yasm/nasm are known to be buggy for Mach-O output.
+Many versions of nasm are known to be buggy for Mach-O output.
 
-* yasm 0.7.99.2161 or later is required for Mac OS X build. *
 * nasm 2.06rc2 or later is required for Mac OS X build *
 
-Last edited: $Date: 2009-01-07 16:32:31 $
+Last edited: $Date: 2009-05-25 09:25:50 $

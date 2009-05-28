@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: image.c,v 1.44 2009-03-30 14:40:05 Isibaar Exp $
+ * $Id: image.c,v 1.43.2.1 2009-05-25 08:31:16 Isibaar Exp $
  *
  ****************************************************************************/
 

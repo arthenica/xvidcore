@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: CXvidDecoder.cpp,v 1.17 2009-05-28 15:42:06 Isibaar Exp $
+ * $Id: CXvidDecoder.cpp,v 1.16.4.1 2009-05-28 15:52:34 Isibaar Exp $
  *
  ****************************************************************************/
 

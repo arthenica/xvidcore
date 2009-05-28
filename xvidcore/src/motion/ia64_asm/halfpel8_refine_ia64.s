@@ -19,7 +19,7 @@
 // *  along with this program; if not, write to the Free Software
 // *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 // *
-// * $Id: halfpel8_refine_ia64.s,v 1.4 2009-02-19 17:07:29 Isibaar Exp $
+// * $Id: halfpel8_refine_ia64.s,v 1.3.14.1 2009-05-25 09:03:47 Isibaar Exp $
 // *
 // ***************************************************************************/
 //
