@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: encoder.c,v 1.138 2010-12-31 10:17:29 Isibaar Exp $
+ * $Id: encoder.c,v 1.135.2.3 2010-12-31 10:20:22 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -2303,7 +2303,7 @@ FrameCodeB(Encoder * pEnc,
 		image_setedges(f_ref, pEnc->mbParam.edged_width,
 					   pEnc->mbParam.edged_height, pEnc->mbParam.width,
 					   pEnc->mbParam.height, 0);
-		pEnc->reference->is_edged = 1;	
+		pEnc->reference->is_edged = 1;
 	}
 
 	if (pEnc->reference->is_interpolated != 0) {

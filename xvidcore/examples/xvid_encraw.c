@@ -22,7 +22,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid_encraw.c,v 1.48 2010-12-30 11:46:17 Isibaar Exp $
+ * $Id: xvid_encraw.c,v 1.46.2.2 2010-12-30 11:47:06 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -563,7 +563,7 @@ main(int argc,
 			int exponent;
 			i++;
 			ARG_FRAMERATE = (float) atof(argv[i]);
-			exponent = (int)strcspn(argv[i], ".");
+			exponent = (int) strcspn(argv[i], ".");
 			if (exponent<(int)strlen(argv[i]))
 				exponent=(int)pow(10.0, (int)(strlen(argv[i])-1-exponent));
 			else
@@ -916,7 +916,7 @@ main(int argc,
           if (ARG_MAXFRAMENR<0)
 			ARG_MAXFRAMENR = avi_info.dwLength-ARG_STARTFRAMENR;
 		  else
-			ARG_MAXFRAMENR = min(ARG_MAXFRAMENR, (int)(avi_info.dwLength-ARG_STARTFRAMENR));
+			ARG_MAXFRAMENR = min(ARG_MAXFRAMENR, (int) (avi_info.dwLength-ARG_STARTFRAMENR));
 
 		  XDIM = avi_info.rcFrame.right - avi_info.rcFrame.left;
 		  YDIM = avi_info.rcFrame.bottom - avi_info.rcFrame.top;
@@ -963,7 +963,7 @@ main(int argc,
 				fprintf(stderr, "Parameter conflict: Do not specify both -bitrate and -size\n");
 				goto release_all;
 		} else
-			ARG_BITRATE = (int)(((ARG_TARGETSIZE * 8) / (ARG_MAXFRAMENR / ARG_FRAMERATE)) * 1024);
+			ARG_BITRATE = (int) (((ARG_TARGETSIZE * 8) / (ARG_MAXFRAMENR / ARG_FRAMERATE)) * 1024);
 	}
 
 		/* Set constant quant to default if no bitrate given for single pass */
@@ -2591,7 +2591,7 @@ prepare_cquant_zones() {
 
 		ZONES[NUM_ZONES].frame = 0;
 		ZONES[NUM_ZONES].mode = XVID_ZONE_QUANT;
-		ZONES[NUM_ZONES].modifier = (int)ARG_CQ;
+		ZONES[NUM_ZONES].modifier = (int) ARG_CQ;
 		ZONES[NUM_ZONES].type = XVID_TYPE_AUTO;
 		ZONES[NUM_ZONES].greyscale = 0;
 		ZONES[NUM_ZONES].chroma_opt = 0;
