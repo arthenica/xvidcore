@@ -25,7 +25,7 @@
 
 #include <windows.h>
 #include <commctrl.h>
-#include <xvid.h>		// Xvid API
+#include <xvid.h>
 #include "config.h"
 #include "debug.h"
 #include "resource.h"

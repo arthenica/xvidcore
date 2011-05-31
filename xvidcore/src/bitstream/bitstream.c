@@ -1258,7 +1258,7 @@ BitstreamWriteVolHeader(Bitstream * const bs,
 	/* divx5 userdata string */
 #define DIVX5_ID ((char *)"DivX503b1393")
   if ((pParam->global_flags & XVID_GLOBAL_DIVX5_USERDATA)) {
-    BitstreamWriteUserData(bs, DIVX5_ID, (uint32_t)strlen(DIVX5_ID));
+    BitstreamWriteUserData(bs, DIVX5_ID, (uint32_t) strlen(DIVX5_ID));
   	if (pParam->max_bframes > 0 && (pParam->global_flags & XVID_GLOBAL_PACKED))
       BitstreamPutBits(bs, 'p', 8);
 	}
@@ -1271,7 +1271,7 @@ BitstreamWriteVolHeader(Bitstream * const bs,
 				xvid_user_format,
 				XVID_BS_VERSION,
 				(frame->vop_flags & XVID_VOP_CARTOON)?'C':'\0');
-		BitstreamWriteUserData(bs, xvid_user_data, (uint32_t)strlen(xvid_user_data));
+		BitstreamWriteUserData(bs, xvid_user_data, (uint32_t) strlen(xvid_user_data));
 	}
 }
 

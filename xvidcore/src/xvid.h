@@ -57,10 +57,8 @@ extern "C" {
 #define XVID_API_MAJOR(a)        (((a)>>16) & 0xff)
 #define XVID_API_MINOR(a)        (((a)>> 0) & 0xff)
 
-#define XVID_VERSION             XVID_MAKE_VERSION(1,4,-127)
-#define XVID_API                 XVID_MAKE_API(4, 4)
-
-#define XVID_UNSTABLE
+#define XVID_VERSION             XVID_MAKE_VERSION(1,3,2)
+#define XVID_API                 XVID_MAKE_API(4, 3)
 
 /* Bitstream Version
  * this will be writen into the bitstream to allow easy detection of xvid
@@ -73,7 +71,7 @@ extern "C" {
  * doesnt hurt but not increasing it could cause difficulty for decoders in the
  * future
  */
-#define XVID_BS_VERSION 72 
+#define XVID_BS_VERSION 64 
 
 /*****************************************************************************
  * error codes

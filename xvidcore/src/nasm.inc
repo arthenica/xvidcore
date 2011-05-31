@@ -19,7 +19,7 @@
 ; *  along with this program ; if not, write to the Free Software
 ; *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 ; *
-; * $Id: nasm.inc,v 1.9 2011-02-25 12:38:37 Isibaar Exp $
+; * $Id: nasm.inc,v 1.7.2.2 2011-02-25 12:40:25 Isibaar Exp $
 ; *
 ; ***************************************************************************/
 

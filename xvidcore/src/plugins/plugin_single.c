@@ -187,7 +187,7 @@ rc_single_after(rc_single_t * rc,
 	rc->total_size += data->length;
 
 	/* Compute the deviation from expected total size */
-	deviation = (int64_t) 
+	deviation = (int64_t)
 		(rc->total_size - rc->bytes_per_sec * rc->time);
 
 	averaging_period = (double) rc->averaging_period;
