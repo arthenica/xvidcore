@@ -1,7 +1,0 @@
-WARNING: This is not a release!
-
-You are using an in-development version of an unstable branch.
-You should not use this installation for anything serious!
-
-If in doubt, don't install and rather get the latest stable
-release from: http://www.xvid.org/download/
