@@ -3,7 +3,7 @@
  * XVID MPEG-4 VIDEO CODEC
  * - Xvid Main header file -
  *
- *  Copyright(C) 2001-2011 Peter Ross <pross@xvid.org>
+ *  Copyright(C) 2001-2014 Peter Ross <pross@xvid.org>
  *
  *  This program is free software ; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -26,20 +26,9 @@
 #ifndef _XVID_H_
 #define _XVID_H_
 
+
 #ifdef __cplusplus
 extern "C" {
-#endif
-
-/*****************************************************************************
- * function export defines
- ****************************************************************************/
-
-#ifndef XVID_IMPEXP
-#define XVID_IMPEXP             extern
-#endif
-
-#ifndef XVID_CALL
-#define XVID_CALL
 #endif
 
 /*****************************************************************************
@@ -68,10 +57,8 @@ extern "C" {
 #define XVID_API_MAJOR(a)        (((a)>>16) & 0xff)
 #define XVID_API_MINOR(a)        (((a)>> 0) & 0xff)
 
-#define XVID_VERSION             XVID_MAKE_VERSION(1,4,-127)
-#define XVID_API                 XVID_MAKE_API(4, 4)
-
-#define XVID_UNSTABLE
+#define XVID_VERSION             XVID_MAKE_VERSION(1,3,4)
+#define XVID_API                 XVID_MAKE_API(4, 3)
 
 /* Bitstream Version
  * this will be writen into the bitstream to allow easy detection of xvid
@@ -84,7 +71,7 @@ extern "C" {
  * doesnt hurt but not increasing it could cause difficulty for decoders in the
  * future
  */
-#define XVID_BS_VERSION 73 
+#define XVID_BS_VERSION 67 
 
 /*****************************************************************************
  * error codes
@@ -236,7 +223,7 @@ typedef struct {
 #define XVID_GBL_INFO    1 /* return some info about xvidcore, and the host computer */
 #define XVID_GBL_CONVERT 2 /* colorspace conversion utility */
 
-XVID_IMPEXP int XVID_CALL xvid_global(void *handle, int opt, void *param1, void *param2);
+extern int xvid_global(void *handle, int opt, void *param1, void *param2);
 
 
 /*****************************************************************************
@@ -247,7 +234,7 @@ XVID_IMPEXP int XVID_CALL xvid_global(void *handle, int opt, void *param1, void 
 #define XVID_DEC_DESTROY 1 /* destroy decore instance: return 0 on success */
 #define XVID_DEC_DECODE  2 /* decode a frame: returns number of bytes consumed >= 0 */
 
-XVID_IMPEXP int XVID_CALL xvid_decore(void *handle, int opt, void *param1, void *param2);
+extern int xvid_decore(void *handle, int opt, void *param1, void *param2);
 
 /* XVID_DEC_CREATE param 1
 	image width & height as well as FourCC code may be specified 
@@ -486,7 +473,7 @@ typedef struct
 
  ****************************************************************************/
 
-typedef int (XVID_CALL xvid_plugin_func)(void * handle, int opt, void * param1, void * param2);
+typedef int (xvid_plugin_func)(void * handle, int opt, void * param1, void * param2);
 
 typedef struct
 {
@@ -494,17 +481,18 @@ typedef struct
 	void * param;
 } xvid_enc_plugin_t;
 
-XVID_IMPEXP xvid_plugin_func xvid_plugin_single;   /* single-pass rate control */
-XVID_IMPEXP xvid_plugin_func xvid_plugin_2pass1;   /* two-pass rate control: first pass */
-XVID_IMPEXP xvid_plugin_func xvid_plugin_2pass2;   /* two-pass rate control: second pass */
 
-XVID_IMPEXP xvid_plugin_func xvid_plugin_lumimasking;  /* lumimasking */
+extern xvid_plugin_func xvid_plugin_single;   /* single-pass rate control */
+extern xvid_plugin_func xvid_plugin_2pass1;   /* two-pass rate control: first pass */
+extern xvid_plugin_func xvid_plugin_2pass2;   /* two-pass rate control: second pass */
 
-XVID_IMPEXP xvid_plugin_func xvid_plugin_psnr;      /* write psnr values to stdout */
-XVID_IMPEXP xvid_plugin_func xvid_plugin_dump;      /* dump before and after yuvpgms */
+extern xvid_plugin_func xvid_plugin_lumimasking;  /* lumimasking */
 
-XVID_IMPEXP xvid_plugin_func xvid_plugin_ssim;      /*write ssim values to stdout*/
-XVID_IMPEXP xvid_plugin_func xvid_plugin_psnrhvsm;  /*write psnrhvsm values to stdout*/
+extern xvid_plugin_func xvid_plugin_psnr;	/* write psnr values to stdout */
+extern xvid_plugin_func xvid_plugin_dump;	/* dump before and after yuvpgms */
+
+extern xvid_plugin_func xvid_plugin_ssim;	    /*write ssim values to stdout*/
+extern xvid_plugin_func xvid_plugin_psnrhvsm;	/*write psnrhvsm values to stdout*/
 
 
 /* single pass rate control
@@ -601,7 +589,7 @@ typedef struct {
  * Encoder entry point
  *--------------------------------------------------------------------------*/
 
-XVID_IMPEXP int XVID_CALL xvid_encore(void *handle, int opt, void *param1, void *param2);
+extern int xvid_encore(void *handle, int opt, void *param1, void *param2);
 
 /* Quick API reference
  *

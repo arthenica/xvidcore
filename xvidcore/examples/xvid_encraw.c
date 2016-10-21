@@ -6,7 +6,7 @@
  *  Copyright(C) 2002-2003 Christoph Lampert <gruel@web.de>
  *               2002-2003 Edouard Gomez <ed.gomez@free.fr>
  *               2003      Peter Ross <pross@xvid.org>
- *               2003-2010 Michael Militzer <isibaar@xvid.org>
+ *               2003-2014 Michael Militzer <isibaar@xvid.org>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -163,8 +163,6 @@ typedef struct
 	int stop_num; 
 	
 	char *outfilename;      /* output filename */
-	char *outavifilename;   /* output avi filename */
-	char *outmkvfilename;   /* output mkv filename */
 	char *statsfilename1;   /* pass1 statsfile */
 
 	int input_num; 
@@ -575,7 +573,7 @@ main(int argc,
 			int exponent;
 			i++;
 			ARG_FRAMERATE = (float) atof(argv[i]);
-			exponent = (int)strcspn(argv[i], ".");
+			exponent = (int) strcspn(argv[i], ".");
 			if (exponent<(int)strlen(argv[i]))
 				exponent=(int)pow(10.0, (int)(strlen(argv[i])-1-exponent));
 			else
@@ -975,7 +973,7 @@ NB: You can define up to %d zones using the -zones option as described below.\n\
           if (ARG_MAXFRAMENR<0)
 			ARG_MAXFRAMENR = avi_info.dwLength-ARG_STARTFRAMENR;
 		  else
-			ARG_MAXFRAMENR = min(ARG_MAXFRAMENR, (int)(avi_info.dwLength-ARG_STARTFRAMENR));
+			ARG_MAXFRAMENR = min(ARG_MAXFRAMENR, (int) (avi_info.dwLength-ARG_STARTFRAMENR));
 
 		  XDIM = avi_info.rcFrame.right - avi_info.rcFrame.left;
 		  YDIM = avi_info.rcFrame.bottom - avi_info.rcFrame.top;
@@ -1000,12 +998,9 @@ NB: You can define up to %d zones using the -zones option as described below.\n\
 				return (-1);
 			}
 #ifdef USE_APP_LEVEL_THREADING
-			{
-				int pos;
-				fseek(in_file, 0, SEEK_END); /* Determine input size */
-				pos = ftell(in_file);
-				ARG_MAXFRAMENR = pos / IMAGE_SIZE(XDIM, YDIM); /* PGM, header size ?? */
-			}
+			fseek(in_file, 0, SEEK_END); /* Determine input size */
+			pos = ftell(in_file);
+			ARG_MAXFRAMENR = pos / IMAGE_SIZE(XDIM, YDIM); /* PGM, header size ?? */
 #endif
 			fclose(in_file);
 		}
@@ -1023,7 +1018,7 @@ NB: You can define up to %d zones using the -zones option as described below.\n\
 				fprintf(stderr, "Parameter conflict: Do not specify both -bitrate and -size\n");
 				goto release_all;
 		} else
-			ARG_BITRATE = (int)(((ARG_TARGETSIZE * 8) / (ARG_MAXFRAMENR / ARG_FRAMERATE)) * 1024);
+			ARG_BITRATE = (int) (((ARG_TARGETSIZE * 8) / (ARG_MAXFRAMENR / ARG_FRAMERATE)) * 1024);
 	}
 
 		/* Set constant quant to default if no bitrate given for single pass */
@@ -1036,7 +1031,8 @@ NB: You can define up to %d zones using the -zones option as described below.\n\
 #ifdef USE_APP_LEVEL_THREADING
 	if (ARG_INPUTFILE == NULL || strcmp(ARG_INPUTFILE, "stdin") == 0 ||
 	    ARG_NUM_APP_THREADS <= 1 || ARG_THREADS != 0 ||
-	    ARG_TIMECODEFILE != NULL || ARG_INPUTTYPE == 1)		/* TODO: PGM input */
+	    ARG_TIMECODEFILE != NULL || ARG_AVIOUTPUTFILE != NULL ||
+	    ARG_INPUTTYPE == 1 || ARG_MKVOUTPUTFILE != NULL)		/* TODO: PGM input */
 #endif /* Spawn just one encoder instance */
 	{		
 		enc_sequence_data_t enc_data;
@@ -1046,8 +1042,6 @@ NB: You can define up to %d zones using the -zones option as described below.\n\
 		ARG_NUM_APP_THREADS = 1;
 
 		enc_data.outfilename = ARG_OUTPUTFILE;
-		enc_data.outavifilename = ARG_AVIOUTPUTFILE;
-		enc_data.outmkvfilename = ARG_MKVOUTPUTFILE;
 		enc_data.statsfilename1 = ARG_PASS1;
 		enc_data.start_num = ARG_STARTFRAMENR;
 		enc_data.stop_num = ARG_MAXFRAMENR;
@@ -1070,8 +1064,6 @@ NB: You can define up to %d zones using the -zones option as described below.\n\
 
 		enc_sequence_data_t enc_data[MAX_ENC_INSTANCES];
 		char outfile[MAX_ENC_INSTANCES][256];
-		char outavifile[MAX_ENC_INSTANCES][256];
-		char outmkvfile[MAX_ENC_INSTANCES][256];
 		char statsfilename[MAX_ENC_INSTANCES][256];
 
 		for (k = 0; k < MAX_ENC_INSTANCES; k++)
@@ -1086,34 +1078,13 @@ NB: You can define up to %d zones using the -zones option as described below.\n\
 			ARG_THREADS = -1;
 
 		enc_data[0].outfilename = ARG_OUTPUTFILE;
-		enc_data[0].outavifilename = ARG_AVIOUTPUTFILE;
-		enc_data[0].outmkvfilename = ARG_MKVOUTPUTFILE;
 		enc_data[0].statsfilename1 = ARG_PASS1;
 		enc_data[0].start_num = ARG_STARTFRAMENR;
 		enc_data[0].stop_num = (ARG_MAXFRAMENR-ARG_STARTFRAMENR)/ARG_NUM_APP_THREADS;
 
 		for (k = 1; k < ARG_NUM_APP_THREADS; k++) {
-			if (ARG_OUTPUTFILE) {
-				sprintf(outfile[k], "%s.%03d", ARG_OUTPUTFILE, k);
-				enc_data[k].outfilename = outfile[k];
-			}
-			else
-				enc_data[k].outfilename = NULL;
-
-			if (ARG_AVIOUTPUTFILE) {
-				sprintf(outavifile[k], "%.*s_%03d.avi", strlen(ARG_AVIOUTPUTFILE) - 4, ARG_AVIOUTPUTFILE, k);
-				enc_data[k].outavifilename = outavifile[k];
-			}
-			else
-				enc_data[k].outavifilename = NULL;
-
-			if (ARG_MKVOUTPUTFILE) {
-				sprintf(outmkvfile[k], "%.*s_%03d.mkv", strlen(ARG_MKVOUTPUTFILE) - 4, ARG_MKVOUTPUTFILE, k);
-				enc_data[k].outmkvfilename = outmkvfile[k];
-			}
-			else
-				enc_data[k].outmkvfilename = NULL;
-
+			sprintf(outfile[k], "%s.%03d", ARG_OUTPUTFILE, k);
+			enc_data[k].outfilename = outfile[k];
 			if (ARG_PASS1) {
 				sprintf(statsfilename[k], "%s.%03d", ARG_PASS1, k);
 				enc_data[k].statsfilename1 = statsfilename[k];
@@ -1258,8 +1229,6 @@ void encode_sequence(enc_sequence_data_t *h) {
 	int start_num = h->start_num; 
 	int stop_num = h->stop_num; 
 	char *outfilename = h->outfilename; 
-	char *outavifilename = h->outavifilename;
-	char *outmkvfilename = h->outmkvfilename;
 	float *totalPSNR = h->totalPSNR;
 
 	int input_num;
@@ -1476,13 +1445,13 @@ void encode_sequence(enc_sequence_data_t *h) {
 		}
 
 #ifdef XVID_AVI_OUTPUT
-		if (outavifilename != NULL ) {
+		if (ARG_AVIOUTPUTFILE != NULL ) {
 			{
 				/* Open the .avi output then close it */
 				/* Resets the file size to 0, which AVIFile doesn't seem to do */
 				FILE *scrub;
-				if ((scrub = fopen(outavifilename, "w+b")) == NULL) {
-					fprintf(stderr, "Error opening output file %s\n", outavifilename);
+				if ((scrub = fopen(ARG_AVIOUTPUTFILE, "w+b")) == NULL) {
+					fprintf(stderr, "Error opening output file %s\n", ARG_AVIOUTPUTFILE);
 					goto release_all;
 				}
 				else
@@ -1493,12 +1462,12 @@ void encode_sequence(enc_sequence_data_t *h) {
 			myAVIStreamInfo.fccHandler = MAKEFOURCC('x', 'v', 'i', 'd');
 			myAVIStreamInfo.dwScale = ARG_DWSCALE;
 			myAVIStreamInfo.dwRate = ARG_DWRATE;
-			myAVIStreamInfo.dwLength = (h->stop_num - h->start_num);
+			myAVIStreamInfo.dwLength = ARG_MAXFRAMENR;
 			myAVIStreamInfo.dwQuality = 10000;
 			SetRect(&myAVIStreamInfo.rcFrame, 0, 0, XDIM, YDIM);
 
-			if ((avierr=AVIFileOpen(&myAVIFile, outavifilename, OF_CREATE|OF_WRITE, NULL))) {
-				fprintf(stderr, "AVIFileOpen failed opening output file %s, error code %d\n", outavifilename, avierr);
+			if ((avierr=AVIFileOpen(&myAVIFile, ARG_AVIOUTPUTFILE, OF_CREATE|OF_WRITE, NULL))) {
+				fprintf(stderr, "AVIFileOpen failed opening output file %s, error code %d\n", ARG_AVIOUTPUTFILE, avierr);
 				goto release_all;
 			}
 
@@ -1522,20 +1491,20 @@ void encode_sequence(enc_sequence_data_t *h) {
 		}
 #endif
 #ifdef XVID_MKV_OUTPUT
-		if (outmkvfilename != NULL) {
+		if (ARG_MKVOUTPUTFILE != NULL) {
 			{
 				/* Open the .mkv output then close it */
 				/* Just to make sure we can write to it */
 				FILE *scrub;
-				if ((scrub = fopen(outmkvfilename, "w+b")) == NULL) {
-					fprintf(stderr, "Error opening output file %s\n", outmkvfilename);
+				if ((scrub = fopen(ARG_MKVOUTPUTFILE, "w+b")) == NULL) {
+					fprintf(stderr, "Error opening output file %s\n", ARG_MKVOUTPUTFILE);
 					goto release_all;
 				}
 				else
 					fclose(scrub);
 			}
 
-			MKVFileOpen(&myMKVFile, outmkvfilename, OF_CREATE|OF_WRITE, NULL);
+			MKVFileOpen(&myMKVFile, ARG_MKVOUTPUTFILE, OF_CREATE|OF_WRITE, NULL);
 			if (ARG_PAR) {
 				myMKVStreamInfo.display_height = YDIM*height_ratios[ARG_PAR];
 				myMKVStreamInfo.display_width = XDIM*width_ratios[ARG_PAR];
@@ -1548,7 +1517,7 @@ void encode_sequence(enc_sequence_data_t *h) {
 			myMKVStreamInfo.width = XDIM;
 			myMKVStreamInfo.framerate = ARG_DWRATE;
 			myMKVStreamInfo.framescale = ARG_DWSCALE;
-			myMKVStreamInfo.length = (h->stop_num - h->start_num);
+			myMKVStreamInfo.length = ARG_MAXFRAMENR;
 			MKVFileCreateStream(myMKVFile, &myMKVStream, &myMKVStreamInfo);
 		}
 #endif
@@ -1588,7 +1557,7 @@ void encode_sequence(enc_sequence_data_t *h) {
 					else
 						in_buffer += ((DWORD*)in_buffer)[0];
 				} else {
-					if (AVIStreamRead(avi_in_stream, input_num + start_num, 1, in_buffer, 4 * XDIM*YDIM, NULL, NULL) != AVIERR_OK)
+					if(AVIStreamRead(avi_in_stream, input_num+start_num, 1, in_buffer, 4*XDIM*YDIM, NULL, NULL ) != AVIERR_OK)
 						result = 1;
 				}
 			} else
@@ -1714,7 +1683,7 @@ void encode_sequence(enc_sequence_data_t *h) {
 				}
 			}
 			else
-				sprintf(timecode, "%f", ((double)ARG_DWSCALE/ARG_DWRATE)*1000*(output_num-start_num));
+				sprintf(timecode, "%f", ((double)ARG_DWSCALE/ARG_DWRATE)*1000*output_num);
 
 			/* Save single files */
 			if (ARG_SAVEINDIVIDUAL) {
@@ -1725,11 +1694,11 @@ void encode_sequence(enc_sequence_data_t *h) {
 				fclose(out);
 			}
 #ifdef XVID_AVI_OUTPUT
-			if (outavifilename && myAVIStream) {
+			if (ARG_AVIOUTPUTFILE && myAVIStream) {
 				int output_frame;
 
 				if (time_file == NULL)
-					output_frame = (output_num-start_num);
+					output_frame = output_num;
 				else {
 					output_frame = (int)(atof(timecode)/1000/((double)ARG_DWSCALE/ARG_DWRATE)+.5);
 				}
@@ -1748,7 +1717,7 @@ void encode_sequence(enc_sequence_data_t *h) {
 						fwrite(mp4_buffer, 1, m4v_size, out_file);
 				}
 #ifdef XVID_MKV_OUTPUT
-				if (outmkvfilename && myMKVStream) {
+				if (ARG_MKVOUTPUTFILE && myMKVStream) {
 					MKVStreamWrite(myMKVStream, atof(timecode), 1, (ARG_PACKED && fakenvop && (m4v_size <= 8)) ? NULL : mp4_buffer, m4v_size, key ? AVIIF_KEYFRAME : 0, NULL, NULL);
 				}
 #endif
@@ -1809,12 +1778,9 @@ void encode_sequence(enc_sequence_data_t *h) {
 #endif
 
   free_all_memory:
-	if (out_buffer)
-	    free(out_buffer);
-	if (mp4_buffer)
-	    free(mp4_buffer);
-	if ((in_buffer) && (get_frame == NULL))
-	    free(in_buffer);
+	free(out_buffer);
+	free(mp4_buffer);
+	free(in_buffer);
 }
 
 /*****************************************************************************
@@ -2719,7 +2685,7 @@ prepare_cquant_zones() {
 
 		ZONES[NUM_ZONES].frame = 0;
 		ZONES[NUM_ZONES].mode = XVID_ZONE_QUANT;
-		ZONES[NUM_ZONES].modifier = (int)ARG_CQ;
+		ZONES[NUM_ZONES].modifier = (int) ARG_CQ;
 		ZONES[NUM_ZONES].type = XVID_TYPE_AUTO;
 		ZONES[NUM_ZONES].greyscale = 0;
 		ZONES[NUM_ZONES].chroma_opt = 0;

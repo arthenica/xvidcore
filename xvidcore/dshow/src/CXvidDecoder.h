@@ -168,8 +168,6 @@ private :
 	int ar_x, ar_y;
 	bool forced_ar;
 
-	int interlaced;
-
 	int rgb_flip;
 	int out_stride;
 

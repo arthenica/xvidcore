@@ -1647,13 +1647,8 @@ repeat:
     if(stats) {
       stats->type = XVID_TYPE_VOL;
       stats->data.vol.general = 0;
-	  stats->data.vop.general = 0;
-	  if (dec->interlacing) {
-		stats->data.vol.general |= XVID_VOL_INTERLACING;
-		if (dec->top_field_first) {
-	      stats->data.vop.general |= XVID_VOP_TOPFIELDFIRST;
-		}
-	  }
+      /*XXX: if (dec->interlacing)
+        stats->data.vol.general |= ++INTERLACING; */
       stats->data.vol.width = dec->width;
       stats->data.vol.height = dec->height;
       stats->data.vol.par = dec->aspect_ratio;

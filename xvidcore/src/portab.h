@@ -90,15 +90,8 @@ static __inline int pthread_num_processors_np()
 #elif defined(__amigaos4__)
 
 # include <pthread.h>
-# include <proto/exec.h>
-
-static __inline void amiga_yield(void)
-{
-	/* SetTaskPri() on the currently running task triggers a reschedule */
-	struct Task *me = IExec->FindTask(NULL);
-	IExec->SetTaskPri(me, me->tc_Node.ln_Pri);
-}
-# define sched_yield() amiga_yield()
+# include <proto/dos.h>
+# define sched_yield() IDOS->Delay(1)
 
 #elif defined(SYS_BEOS)
 
