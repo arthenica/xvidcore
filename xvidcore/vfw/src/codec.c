@@ -159,11 +159,6 @@ LRESULT compress_query(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * lpbiO
 		return ICERR_BADFORMAT;
 	}
 
-	if ((inhdr->biWidth % 4) || (inhdr->biHeight % 4))
-	{
-		return ICERR_BADFORMAT;
-	}
-
 	if (lpbiOutput == NULL) 
 	{
 		return ICERR_OK;
@@ -570,7 +565,6 @@ LRESULT compress_begin(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * lpbiO
 		plugins[create.num_plugins].param = NULL;
 		create.num_plugins++;
 	}
-	
 	create.profile = profiles[codec->config.profile].id;
 
 	create.width = lpbiInput->bmiHeader.biWidth;

@@ -166,9 +166,8 @@ private :
 	int (*xvid_global_func)(void *handle, int opt, void *param1, void *param2);
 	int (*xvid_decore_func)(void *handle, int opt, void *param1, void *param2);
 	int ar_x, ar_y;
-	bool forced_ar;
-
 	int interlaced;
+	bool forced_ar;
 
 	int rgb_flip;
 	int out_stride;

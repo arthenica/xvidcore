@@ -1151,7 +1151,7 @@ repeat :
 		{
             DPRINTF("*** XVID_DEC_DECODE");
 			return S_FALSE;
-		} else if ((g_config.aspect_ratio == 0 || g_config.aspect_ratio == 1 && forced_ar == false) || !!(interlaced)) {
+		} else if ((g_config.aspect_ratio == 0 || g_config.aspect_ratio == 1 && forced_ar == false) || !!(interlaced)){
         
 			if (stats.type != XVID_TYPE_NOTHING) {  /* dont attempt to set vmr aspect ratio if no frame was returned by decoder */
 				// inspired by minolta! works for VMR 7 + 9
@@ -1163,18 +1163,17 @@ repeat :
 					CMediaType mtOut2 = m_pOutput->CurrentMediaType();
 					VIDEOINFOHEADER2* vihOut2 = (VIDEOINFOHEADER2*)mtOut2.Format();
 
-					if (*mtOut2.FormatType() == FORMAT_VideoInfo2)
+					if (*mtOut2.FormatType() == FORMAT_VideoInfo2) 
 					{
 						int need_format_change = 0;
 
-						if (vihOut2->dwPictAspectRatioX != ar_x && vihOut2->dwPictAspectRatioY != ar_y)
+						if (vihOut2->dwPictAspectRatioX != ar_x || vihOut2->dwPictAspectRatioY != ar_y)
 						{
 							vihOut2->dwPictAspectRatioX = ar_x;
 							vihOut2->dwPictAspectRatioY = ar_y;
-							int format_change;
+							need_format_change = 1;
 						}
-
-						if ((interlaced) && !(vihOut2->dwInterlaceFlags & AMINTERLACE_IsInterlaced))
+						if ((interlaced) && !(vihOut2->dwInterlaceFlags & AMINTERLACE_IsInterlaced)) 
 						{
 							vihOut2->dwInterlaceFlags = AMINTERLACE_IsInterlaced;
 							if (interlaced > 2) {
@@ -2137,21 +2136,21 @@ END_LOOP:
 	if (need_format_change) {
 		IMFMediaType *pOutputType = NULL;
 		hr = MFTGetOutputCurrentType(0, &pOutputType);
-
+		
 		if (SUCCEEDED(hr)) {
-			if (interlaced > 1) {
-				hr = pOutputType->SetUINT32(MF_MT_INTERLACE_MODE, MFVideoInterlace_FieldInterleavedUpperFirst);
-			}
-			else if (interlaced) {
-				hr = pOutputType->SetUINT32(MF_MT_INTERLACE_MODE, MFVideoInterlace_FieldInterleavedLowerFirst);
-			}
-			else {
-				hr = pOutputType->SetUINT32(MF_MT_INTERLACE_MODE, MFVideoInterlace_Progressive);
-			}
+	    	if (interlaced > 1) {
+		        hr = pOutputType->SetUINT32(MF_MT_INTERLACE_MODE, MFVideoInterlace_FieldInterleavedUpperFirst);
+		    }
+		    else if (interlaced) {
+		        hr = pOutputType->SetUINT32(MF_MT_INTERLACE_MODE, MFVideoInterlace_FieldInterleavedLowerFirst);
+		    }
+		    else {
+		        hr = pOutputType->SetUINT32(MF_MT_INTERLACE_MODE, MFVideoInterlace_Progressive);
+		    }
 		}
-
+		
 		if (SUCCEEDED(hr)) {
-			hr = MFSetAttributeRatio(pOutputType, MF_MT_PIXEL_ASPECT_RATIO, ar_x, ar_y);
+		    hr = MFSetAttributeRatio(pOutputType, MF_MT_PIXEL_ASPECT_RATIO, ar_x, ar_y);
 		}
 
 		if (SUCCEEDED(hr)) {

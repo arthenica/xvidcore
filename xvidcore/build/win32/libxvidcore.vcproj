@@ -425,11 +425,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\README"
+				RelativePath="..\..\doc\README"
 				>
 			</File>
 			<File
-				RelativePath="..\..\doc\README"
+				RelativePath="..\..\README"
 				>
 			</File>
 			<File
