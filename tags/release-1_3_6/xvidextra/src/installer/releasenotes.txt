@@ -1,0 +1,13 @@
+Xvid-1.3.6-20191204 _Final Release_
+
+
+This is Xvid 1.3.6 bugfix release. It replaces the previous 1.3.5 stable release.
+
+Changes since 1.3.5:
+
+* xvidcore
+  - Fix for various, long-standing and potentially critical
+    security vulnerabilities in the decoder (credit to OSS-Fuzz)
+  - Always use .text sections in nasm code for macho target 
+ 
+https://www.xvid.com/
