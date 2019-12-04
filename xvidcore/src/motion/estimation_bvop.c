@@ -1110,7 +1110,7 @@ MotionEstimationBVOP(MBParam * const pParam,
 			else {
 				SearchInterpolate_final_fast(i, j, frame->motion_flags, pParam, &best_sad, &Data_i);
 			}
-
+			
 			if (Data_d.iMinSAD[0] <= 2*best_sad)
 				if ((!(frame->motion_flags&XVID_ME_SKIP_DELTASEARCH) && (best_sad > 750))
 					|| (best_sad > 1000))

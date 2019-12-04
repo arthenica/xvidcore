@@ -467,7 +467,7 @@ rc_2pass2_create(xvid_plg_create_t * create, rc_2pass2_t **handle)
 
 	/* vbv_size==0 switches VBV check off */
 	if (rc->param.vbv_size > 0)  {
-		const float fps = (float) ((double)create->fbase/(double)create->fincr);
+		const float fps = (float)((double)create->fbase/(double)create->fincr);
 		int status = check_curve_for_vbv_compliancy(rc, fps);
 
 		if (status) {
@@ -1361,7 +1361,7 @@ scaled_curve_apply_advanced_parameters(rc_2pass2_t * rc)
 		if (rc->count[i] == 0 || rc->pb_iboost_tax_ratio == 0) {
 			rc->avg_length[i] = 1;
 		} else {
-			rc->avg_length[i] = (double) rc->tot_scaled_length[i];
+			rc->avg_length[i] = (double)rc->tot_scaled_length[i];
 
 			if (i == (XVID_TYPE_IVOP-1)) {
 				/* I Frames total has to be added the boost total */

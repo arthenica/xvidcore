@@ -8,12 +8,12 @@ dnl ==========================================================================
 
 AC_PREREQ([2.50])
 
-AC_INIT([Xvid], [1.4.0], [xvid-devel@xvid.org])
+AC_INIT([Xvid], [1.3.6], [xvid-devel@xvid.org])
 AC_CONFIG_SRCDIR(configure.in)
 
 dnl Do not forget to increase that when needed.
 API_MAJOR="4"
-API_MINOR="4"
+API_MINOR="3"
 
 dnl NASM/YASM version requirement
 minimum_yasm_major_version=1
@@ -301,7 +301,6 @@ ALTIVEC_CFLAGS=""
 PRE_SHARED_LIB=""
 SO_API_MAJOR_LINK=""
 SO_LINK=""
-IMPORT_LIB=""
 case "$target_os" in
      linux*|solaris*|gnu*|*qnx*)
 	AC_MSG_RESULT([ok])
@@ -321,21 +320,12 @@ case "$target_os" in
 	SPECIFIC_LDFLAGS="-Wl,-soname,libxvidcore.\$(SHARED_EXTENSION).\$(API_MAJOR) -shared -lc -lm"
 	SPECIFIC_CFLAGS="-fPIC"
 	;;
-     [[cC]][[yY]][[gG]][[wW]][[iI]][[nN]]*)
+     [[cC]][[yY]][[gG]][[wW]][[iI]][[nN]]*|mingw32*|mks*)
 	AC_MSG_RESULT([ok])
-	STATIC_LIB="libxvidcore.\$(STATIC_EXTENSION)"
-	SHARED_LIB="cygxvidcore.\$(SHARED_EXTENSION)"
-	IMPORT_LIB="libxvidcore.\$(SHARED_EXTENSION).\$(STATIC_EXTENSION)"
+	STATIC_LIB="xvidcore.\$(STATIC_EXTENSION)"
+	SHARED_LIB="xvidcore.\$(SHARED_EXTENSION)"
 	SPECIFIC_LDFLAGS="-shared -Wl,--dll,--out-implib,\$@.a libxvidcore.def"
-	SPECIFIC_CFLAGS=""
-	;;
-     mingw32*|mks*)
-	AC_MSG_RESULT([ok])
-	STATIC_LIB="libxvidcore.\$(STATIC_EXTENSION)"
-	SHARED_LIB="libxvidcore.\$(SHARED_EXTENSION)"
-	IMPORT_LIB="libxvidcore.\$(SHARED_EXTENSION).\$(STATIC_EXTENSION)"
-	SPECIFIC_LDFLAGS="-shared -Wl,--dll,--out-implib,\$@.a libxvidcore.def"
-	SPECIFIC_CFLAGS=""
+	SPECIFIC_CFLAGS="-mno-cygwin"
 	;;
      darwin*)
 	STATIC_LIB="libxvidcore.\$(STATIC_EXTENSION)"
@@ -379,10 +369,6 @@ esac
 
 if test x"$PRE_SHARED_LIB" = x; then 
   PRE_SHARED_LIB=$SHARED_LIB
-fi
-
-if test x"$IMPORT_LIB" = x; then
-  IMPORT_LIB=$SHARED_LIB
 fi
 
 dnl ==========================================================================
@@ -731,7 +717,7 @@ dnl Some gcc flags can't be used for gcc >= 3.4.0
 dnl ==========================================================================
 
 if test "$GCC" = "yes" ; then
-	
+
 	GCC_MAJOR=`$CC -dumpversion | cut -d . -f 1`
 	GCC_MINOR=`$CC -dumpversion | cut -d . -f 2`
 
@@ -742,6 +728,7 @@ if test "$GCC" = "yes" ; then
 		CFLAGS=`echo $CFLAGS | sed s,'-fmove-all-movables','',g`
 		CFLAGS=`echo $CFLAGS | sed s,'-fnew-ra','',g`
 		CFLAGS=`echo $CFLAGS | sed s,'-fwritable-strings','',g`
+                SPECIFIC_CFLAGS=`echo $SPECIFIC_CFLAGS | sed s,'-mno-cygwin','',g`
 	fi
 
 	# GCC 3.4.x
@@ -787,7 +774,6 @@ AC_SUBST(PRE_SHARED_LIB)
 AC_SUBST(SO_API_MAJOR_LINK)
 AC_SUBST(SO_LINK)
 AC_SUBST(SHARED_LIB)
-AC_SUBST(IMPORT_LIB)
 AC_SUBST(ALTIVEC_CFLAGS)
 
 dnl ==========================================================================
