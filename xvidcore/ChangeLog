@@ -1,4 +1,770 @@
-# Note that this ChangeLog covers only changes to the HEAD branch
+# Note that this ChangeLog covers only main changes to the release branch
+
+2019-12-28 09:43 Isibaar
+	* xvidcore/src/quant/quant_matrix.c: Fix stupid regression due 
+	to wrong brackets...
+
+2019-11-12 14:48 Isibaar
+	* xvidcore/src/bitstream/bitstream.c
+	* xvidcore/src/bitstream/bitstream.h
+	* xvidcore/src/bitstream/mbcoding.c
+	* xvidcore/src/decoder.c
+	* xvidcore/src/global.h
+	* xvidcore/src/image/colorspace.c
+	* xvidcore/src/motion/gmc.c
+	* xvidcore/src/quant/quant_matrix.c
+	* xvidcore/src/xvid.h: Backporting patches from HEAD
+
+2019-01-17 10:33 Isibaar
+	* xvidcore/src/nasm.inc: always use .text for machine (Patch 
+	  by Peter Ross)
+
+2017-07-12 08:23 Isibaar
+	* xvidcore/vfw/src/codec.c: Re-add support to decode raw YV12 
+	  input FourCC video
+
+2017-01-27 13:43 Isibaar
+	* xvidcore/dshow/src/CXvidDecoder.cpp: Fix output buffer stride 
+	  calculation in MFT
+
+2016-10-18 22:01 Isibaar
+	* xvidcore/src/portab.h: AmigaOS patch by Fredrik Wikstrom.
+
+2016-10-18 22:01 Isibaar
+	* xvidcore/build/generic/configure.in: AmigaOS patch by Fredrik 
+	  Wikstrom.
+
+2016-09-27 15:39 Isibaar
+	* xvidcore/vfw/src/codec.c: Debug output only when debug option 
+	  enabled.
+
+2016-01-12 13:55 Isibaar
+	* xvidcore/dshow/src/CXvidDecoder.cpp: MFT pixel aspect ratio - 
+	  backport from HEAD
+
+2016-01-11 17:02 Isibaar
+	* xvidcore/dshow/src/CXvidDecoder.cpp: Setting interlaced flag 
+	  on output pins - backport from HEAD
+
+2016-01-08 17:44 Isibaar
+	* xvidcore/dshow/src/CXvidDecoder.cpp
+	  xvidcore/dshow/src/CXvidDecoder.h: Set interlacing flags in 
+	  VIDEOINFOHEADER2 struct of output pin
+
+2016-01-08 17:40 Isibaar
+	* xvidcore/src/decoder.c
+	  xvidcore/src/xvid.c
+	  xvidcore/src/xvid.h: Set interlacing flags in decoder
+
+2015-07-08 17:32 Isibaar
+	* xvidcore/examples/xvid_encraw.c: Making the applevel 
+	  multithreading work also for AVI output
+
+2015-06-14 21:18 Isibaar
+	* xvidcore/dshow/src/CXvidDecoder.cpp
+	  xvidcore/dshow/src/CXvidDecoder.h
+	  xvidcore/dshow/src/config.c
+	  xvidcore/dshow/src/config.h: Fixed thumbnail creation under 
+	  Windows 10, faster rendering in MediaFoundation, various other 
+	  MFT-specific fixes...
+
+2015-06-11 02:51 Isibaar
+	* xvidcore/src/image/x86_asm/colorspace_rgb_mmx.asm: Attempt at 
+	  fixing a crash in RGB24->YV12 conversions - not yet really 
+	  tested...
+
+2015-06-08 21:15 Isibaar
+	* xvidcore/dshow/src/CXvidDecoder.cpp
+	  xvidcore/dshow/src/CXvidDecoder.h: Changed friendly name of 
+	  MFT to match common conventions.
+
+2014-11-26 00:17 Isibaar
+	* xvidcore/src/encoder.c: Fix for multi-threading bug in case of
+	  input video height <= 16 pixels. Patch by Lukasz Marek.
+
+2014-09-25 19:41 Isibaar
+
+	* xvidcore/build/win32/libxvidcore.vcproj: Enabled multi-threaded
+	  builds in MSVC by default
+
+2014-03-05 08:37  Isibaar
+
+	* xvidcore/examples/xvid_encraw.c: Help info about zones usage and
+	  various fixes for compiler warnings - Patch by Elio Blanca
+
+2014-02-11 14:48  Isibaar
+
+	* xvidcore/examples/xvid_encraw.c: Improved help texts and defaults
+	  handling. Patch by Elio Blanca.
+
+2014-02-09 16:51  Isibaar
+
+	* xvidcore/examples/Makefile, xvidcore/examples/xvid_encraw.c:
+	  Better environment detection for Makefile - Patch by Elio Blanca
+
+2014-02-07 16:00  Isibaar
+
+	* xvidcore/examples/xvid_encraw.c: Fix out of bound access to
+	  framestats struct. Thanks to Elio Blanca.
+
+2013-02-18 16:24  Isibaar
+
+	* xvidcore/build/generic/configure.in: bring version number in
+	  configure.in in sync with rest of code
+
+2013-01-29 19:12  Isibaar
+
+	* xvidcore/build/generic/configure.in: Patch for QNX support by
+	  Mike Gorchak
+
+2012-10-04 14:26  Isibaar
+
+	* xvidcore/build/generic/configure.in: remove obsolete
+	  '-mno-cygwin' option for gcc version >= 4
+
+2012-06-21 09:55  Isibaar
+
+	* xvidcore/examples/xvid_encraw.c: Fixed bug in PGM header parser -
+	  thanks to Jim Bennett!
+
+2012-02-22 19:00  Isibaar
+
+	* xvidcore/dshow/src/CXvidDecoder.cpp,
+	  xvidcore/dshow/src/CXvidDecoder.h, xvidcore/dshow/src/config.c,
+	  xvidcore/dshow/src/config.h, xvidcore/dshow/src/resource.h,
+	  xvidcore/dshow/src/xvid.ax.rc: Ported tray icon patch from HEAD
+	  branch
+
+2011-12-30 13:04  Isibaar
+
+	* xvidcore/src/global.h: #define MIN/MAX macros only when not yet
+	  otherwise defined...
+
+2011-11-09 14:12  Isibaar
+
+	* xvidcore/src/plugins/plugin_lumimasking.c: Reverted change to
+	  max_quant calculation. Users prefer the former behavior...
+
+2011-11-04 15:23  Isibaar
+
+	* xvidcore/src/utils/mbtransquant.c, xvidcore/src/xvid.c,
+	  xvidcore/src/xvid.h: Fix for possible overflow in trellis
+	  quant...
+
+2011-10-25 10:57  Isibaar
+
+	* xvidcore/src/xvid.c, xvidcore/src/xvid.h: Ramp up version
+	  number...
+
+2011-10-25 10:53  Isibaar
+
+	* xvidcore/src/motion/estimation_bvop.c: Fix for encoder crash that
+	  is possible with the following combination of encoder options:
+	  Turbo, VHQ for B-VOPs and Qpel...
+
+2011-10-06 18:05  Isibaar
+
+	* xvidcore/src/plugins/plugin_lumimasking.c: Make sure max_quant is
+	  at least frame_quant+2 for lumi/variance masking
+
+2011-09-19 09:32  Isibaar
+
+	* xvidcore/build/generic/Makefile,
+	  xvidcore/build/generic/configure.in,
+	  xvidcore/build/generic/platform.inc.in: Install symlinks for
+	  shared library. Patch by Andres Mejia.
+
+2011-09-19 08:18  Isibaar
+
+	* xvidcore/build/generic/configure.in: Remove rhapsody OS case.
+	  Patch by Ryan Schmidt.
+
+2011-09-16 12:34  Isibaar
+
+	* xvidcore/build/generic/configure.in: Double check for pthread on
+	  MinGW. Patch by Motofumi Oka.
+
+2011-09-15 10:36  Isibaar
+
+	* xvidcore/build/generic/Makefile,
+	  xvidcore/build/generic/platform.inc.in: install xvidcore.dll to
+	  under Cygwin. Patch by Motofumi Oka.
+
+2011-09-15 09:34  Isibaar
+
+	* xvidcore/build/generic/configure.in: Try to autodetect name
+	  mangling variations for WIN64 cross-compiling. Patch by Motofumi
+	  Oka.
+
+2011-09-14 15:08  Isibaar
+
+	* xvidcore/build/generic/configure.in: removed obsolete -mno-cygwin
+
+2011-09-14 10:45  Isibaar
+
+	* xvidcore/build/generic/configure.in: platform-independent gcc
+	  versio check - patch by Motofumi Oka
+
+2011-08-19 16:20  Isibaar
+
+	* xvidcore/build/generic/configure.in,
+	  xvidcore/build/generic/platform.inc.in: User-supplied LDFLAGS.
+	  Patch by Ryan Schmidt and the MacPorts project.
+
+2011-07-28 07:48  Isibaar
+
+	* xvidcore/build/generic/configure.in: Added support for GNU Hurd
+	  as target_os
+
+2011-05-23 07:47  Isibaar
+
+	* xvidcore/src/xvid.c: removed deprecated call to idct_int32_init()
+
+2011-05-21 16:55  Isibaar
+
+	* xvidcore/ChangeLog: Updated ChangeLog
+
+2011-05-19 12:48  Isibaar
+
+	* xvidcore/dshow/src/CAbout.cpp,
+	  xvidcore/dshow/src/CXvidDecoder.cpp,
+	  xvidcore/dshow/src/Configure.cpp: autoprops property set also for
+	  .cpp files
+
+2011-05-19 12:24  Isibaar
+
+	* xvidcore/dshow/src/CXvidDecoder.cpp: Added #ifdef ENABLE_MFT
+	  check
+
+2011-05-19 12:23  Isibaar
+
+	* xvidcore/dshow/dshow.vcproj: Added special configurations for
+	  MFT-enabled builds
+
+2011-05-19 08:27  Isibaar
+
+	* xvidcore/build/generic/Makefile: Don't include platform.inc on
+	  make clean - Patch by Fabian Greffrath
+
+2011-05-18 16:13  Isibaar
+
+	* xvidcore/dshow/src/CXvidDecoder.cpp, xvidcore/dshow/src/config.c,
+	  xvidcore/dshow/src/config.h, xvidcore/dshow/src/resource.h,
+	  xvidcore/dshow/src/xvid.ax.rc: Display version number in About
+	  box
+
+2011-05-18 12:30  Isibaar
+
+	* xvidcore/vfw/src/resource.rc: More GUI cosmetics
+
+2011-05-18 09:55  Isibaar
+
+	* xvidcore/vfw/src/resource.rc: Minor GUI cosmetics
+
+2011-05-18 09:08  Isibaar
+
+	* xvidcore/src/dct/README.IJG: deleted deprecated README.IJG
+
+2011-05-18 09:07  Isibaar
+
+	* xvidcore/src/dct/fdct.c, xvidcore/src/dct/fdct.h,
+	  xvidcore/src/dct/idct.c, xvidcore/src/dct/idct.h: re-applied new
+	  IDCT/DCT patch from trunk
+
+2011-05-18 09:02  Isibaar
+
+	* xvidcore/dshow/src/CAbout.h, xvidcore/dshow/src/CXvidDecoder.h,
+	  xvidcore/dshow/src/IXvidDecoder.h, xvidcore/dshow/src/config.c,
+	  xvidcore/dshow/src/config.h, xvidcore/dshow/src/debug.c,
+	  xvidcore/dshow/src/debug.h, xvidcore/dshow/src/resource.h,
+	  xvidcore/examples/xvid_bench.c, xvidcore/examples/xvid_decraw.c,
+	  xvidcore/examples/xvid_encraw.c,
+	  xvidcore/src/bitstream/bitstream.c,
+	  xvidcore/src/bitstream/bitstream.h, xvidcore/src/bitstream/cbp.c,
+	  xvidcore/src/bitstream/cbp.h, xvidcore/src/bitstream/mbcoding.c,
+	  xvidcore/src/bitstream/mbcoding.h,
+	  xvidcore/src/bitstream/vlc_codes.h,
+	  xvidcore/src/bitstream/zigzag.h, xvidcore/src/dct/fdct.c,
+	  xvidcore/src/dct/fdct.h, xvidcore/src/dct/idct.c,
+	  xvidcore/src/dct/idct.h, xvidcore/src/dct/ppc_asm/idct_altivec.c,
+	  xvidcore/src/dct/simple_idct.c, xvidcore/src/decoder.c,
+	  xvidcore/src/decoder.h, xvidcore/src/encoder.c,
+	  xvidcore/src/encoder.h, xvidcore/src/global.h,
+	  xvidcore/src/image/colorspace.c, xvidcore/src/image/colorspace.h,
+	  xvidcore/src/image/font.c, xvidcore/src/image/font.h,
+	  xvidcore/src/image/image.c, xvidcore/src/image/image.h,
+	  xvidcore/src/image/interpolate8x8.c,
+	  xvidcore/src/image/interpolate8x8.h,
+	  xvidcore/src/image/postprocessing.c,
+	  xvidcore/src/image/postprocessing.h,
+	  xvidcore/src/image/ppc_asm/colorspace_altivec.c,
+	  xvidcore/src/image/ppc_asm/interpolate8x8_altivec.c,
+	  xvidcore/src/image/ppc_asm/qpel_altivec.c,
+	  xvidcore/src/image/qpel.c, xvidcore/src/image/qpel.h,
+	  xvidcore/src/image/reduced.c, xvidcore/src/image/reduced.h,
+	  xvidcore/src/motion/estimation.h,
+	  xvidcore/src/motion/estimation_bvop.c,
+	  xvidcore/src/motion/estimation_common.c,
+	  xvidcore/src/motion/estimation_gmc.c,
+	  xvidcore/src/motion/estimation_pvop.c,
+	  xvidcore/src/motion/estimation_rd_based.c,
+	  xvidcore/src/motion/estimation_rd_based_bvop.c,
+	  xvidcore/src/motion/gmc.c, xvidcore/src/motion/gmc.h,
+	  xvidcore/src/motion/motion.h, xvidcore/src/motion/motion_comp.c,
+	  xvidcore/src/motion/motion_inlines.h,
+	  xvidcore/src/motion/motion_smp.h,
+	  xvidcore/src/motion/ppc_asm/sad_altivec.c,
+	  xvidcore/src/motion/sad.c, xvidcore/src/motion/sad.h,
+	  xvidcore/src/motion/vop_type_decision.c,
+	  xvidcore/src/plugins/plugin_2pass1.c,
+	  xvidcore/src/plugins/plugin_2pass2.c,
+	  xvidcore/src/plugins/plugin_dump.c,
+	  xvidcore/src/plugins/plugin_lumimasking.c,
+	  xvidcore/src/plugins/plugin_psnr.c,
+	  xvidcore/src/plugins/plugin_psnrhvsm.c,
+	  xvidcore/src/plugins/plugin_single.c,
+	  xvidcore/src/plugins/plugin_ssim.c,
+	  xvidcore/src/plugins/plugin_ssim.h, xvidcore/src/portab.h,
+	  xvidcore/src/prediction/mbprediction.c,
+	  xvidcore/src/prediction/mbprediction.h,
+	  xvidcore/src/quant/ppc_asm/quant_h263_altivec.c,
+	  xvidcore/src/quant/ppc_asm/quant_mpeg_altivec.c,
+	  xvidcore/src/quant/quant.h, xvidcore/src/quant/quant_h263.c,
+	  xvidcore/src/quant/quant_matrix.c,
+	  xvidcore/src/quant/quant_matrix.h,
+	  xvidcore/src/quant/quant_mpeg.c, xvidcore/src/utils/emms.c,
+	  xvidcore/src/utils/emms.h, xvidcore/src/utils/mbfunctions.h,
+	  xvidcore/src/utils/mbtransquant.c,
+	  xvidcore/src/utils/mem_align.c, xvidcore/src/utils/mem_align.h,
+	  xvidcore/src/utils/mem_transfer.c,
+	  xvidcore/src/utils/mem_transfer.h,
+	  xvidcore/src/utils/ppc_asm/altivec_trigger.c,
+	  xvidcore/src/utils/ppc_asm/mem_transfer_altivec.c,
+	  xvidcore/src/utils/timer.c, xvidcore/src/utils/timer.h,
+	  xvidcore/src/xvid.c, xvidcore/src/xvid.h,
+	  xvidcore/vfw/src/codec.c, xvidcore/vfw/src/codec.h,
+	  xvidcore/vfw/src/config.c, xvidcore/vfw/src/config.h,
+	  xvidcore/vfw/src/debug.h, xvidcore/vfw/src/driverproc.c,
+	  xvidcore/vfw/src/resource.h, xvidcore/vfw/src/status.c,
+	  xvidcore/vfw/src/status.h, xvidcore/vfw/src/vfwext.h,
+	  xvidcore/vfw/src/w32api/vfw.h: enabled auto-props property
+
+2011-05-18 08:51  Isibaar
+
+	* xvidcore/src/dct/fdct.c, xvidcore/src/dct/fdct.h,
+	  xvidcore/src/dct/idct.c, xvidcore/src/dct/idct.h: backported new
+	  DCT/IDCT C-implementations from trunk
+
+2011-05-18 08:06  Isibaar
+
+	* xvidcore/build/generic/Makefile: make info
+
+2011-05-18 07:59  Isibaar
+
+	* xvidcore/build/generic/configure.in: Increased version number to
+	  1.3.2
+
+2011-05-18 07:38  Isibaar
+
+	* xvidcore/src/xvid.c, xvidcore/src/xvid.h: Pump up version number
+	  to 1.3.2
+
+2011-05-16 10:09  Isibaar
+
+	* xvidcore/build/win32/libxvidcore.sln: - Fixed issue with CR/LF
+
+2011-05-16 09:38  Isibaar
+
+	* xvidcore/debian: - Removed debian directory from release branch
+
+2011-04-07 19:07  Isibaar
+
+	* xvidcore/build/generic/configure.in, xvidcore/src/encoder.c,
+	  xvidcore/src/image/postprocessing.c: switchable pthread
+	  (backported from HEAD)
+
+2011-03-21 16:00  Isibaar
+
+	* xvidcore/src/image/image.c: add brackets to avoid ambuigity
+
+2011-03-21 14:25  Isibaar
+
+	* xvidcore/dshow/dshow.vcproj: switched back to LIBCMT runtime
+
+2011-03-18 21:16  Isibaar
+
+	* xvidcore/dshow/src/xvid.ico: icon with darker blue
+
+2011-03-17 15:52  Isibaar
+
+	* xvidcore/ChangeLog: Updated changelog
+
+---------------------
+Date: 2011/03/17 16:13:25
+Author: Isibaar
+Branch: release-1_3-branch
+Tag: (none) 
+Log:
+Don't flip RGB output for MFT decoder
+
+Members: 
+	dshow/src/CXvidDecoder.cpp:1.25->1.25.2.4 
+	dshow/src/CXvidDecoder.h:1.9->1.9.2.2 
+
+---------------------
+Date: 2011/03/10 16:27:57
+Author: Isibaar
+Branch: release-1_3-branch
+Tag: (none) 
+Log:
+increase version number to 1.3.1
+
+Members: 
+	build/generic/configure.in:1.33.2.3->1.33.2.4 
+	debian/changelog:1.3->1.3.2.2 
+
+---------------------
+Date: 2011/03/08 22:07:00
+Author: Isibaar
+Branch: release-1_3-branch
+Tag: (none) 
+Log:
+ramp up version number to 1.3.1
+
+Members: 
+	src/xvid.c:1.85.2.2->1.85.2.3 
+	src/xvid.h:1.74.2.3->1.74.2.4 
+
+---------------------
+Date: 2011/03/08 20:18:34
+Author: Isibaar
+Branch: release-1_3-branch
+Tag: (none) 
+Log:
+fixed padding regression for input widths/heights not multiple of 16
+
+Members: 
+	src/encoder.c:1.135.2.4->1.135.2.5 
+	src/xvid.h:1.74.2.2->1.74.2.3 
+	src/image/image.c:1.46.2.1->1.46.2.2 
+
+---------------------
+Date: 2011/02/25 14:15:35
+Author: Isibaar
+Branch: release-1_3-branch
+Tag: (none) 
+Log:
+fixed syntax error for pthread check - thanks to Fabrian Greffrath
+
+Members: 
+	build/generic/configure.in:1.33->1.33.2.3 
+
+---------------------
+Date: 2011/02/25 13:40:25
+Author: Isibaar
+Branch: release-1_3-branch
+Tag: (none) 
+Log:
+noexec stack check not only for "elf" but also "elf32" - thanks to Fabian Greffrath
+
+Members: 
+	src/nasm.inc:1.7->1.7.2.2 
+
+---------------------
+Date: 2011/02/16 20:04:39
+Author: Isibaar
+Branch: release-1_3-branch
+Tag: release-1_3_0 
+Log:
+decoder support for lower case FourCCs (from Jawor's patch)
+GUI cosmetics (from Jawor's patch)
+
+Members: 
+	vfw/src/codec.c:1.30.2.2->1.30.2.3 
+	vfw/src/codec.h:1.7->1.7.2.1 
+	vfw/src/config.c:1.45->1.45.2.2 
+	vfw/src/resource.rc:1.30.2.1->1.30.2.2 
+
+---------------------
+Date: 2011/02/14 18:26:20
+Author: Isibaar
+Branch: release-1_3-branch
+Tag: (none) 
+Log:
+updated changelog for 1_3 branch
+
+Members: 
+	ChangeLog:1.17->1.17.2.1 
+
+---------------------
+Date: 2011/02/14 18:21:00
+Author: Isibaar
+Branch: release-1_3-branch
+Tag: (none) 
+Log:
+Increased version number
+
+Members: 
+	src/xvid.c:1.85->1.85.2.2 
+	src/xvid.h:1.74->1.74.2.2 
+
+---------------------
+Date: 2011/02/14 17:58:54
+Author: Isibaar
+Branch: release-1_3-branch
+Tag: (none) 
+Log:
+Support for additional third-party FourCCs (based on Jawor's patch with some small fixes)
+
+Members: 
+	dshow/src/CXvidDecoder.cpp:1.25.2.2->1.25.2.3 
+	dshow/src/CXvidDecoder.h:1.9->1.9.2.1 
+	dshow/src/config.c:1.12->1.12.2.1 
+	dshow/src/config.h:1.8->1.8.2.1 
+	dshow/src/resource.h:1.5->1.5.2.1 
+	dshow/src/xvid.ax.rc:1.8->1.8.2.1 
+
+---------------------
+Date: 2011/02/03 16:12:34
+Author: Isibaar
+Branch: release-1_3-branch
+Tag: (none) 
+Log:
+skip possible only for P_VOP (Jawor)
+
+Members: 
+	src/encoder.c:1.135.2.3->1.135.2.4 
+
+---------------------
+Date: 2011/02/03 16:01:06
+Author: Isibaar
+Branch: release-1_3-branch
+Tag: (none) 
+Log:
+auto framerate detection if possible, some other minor cosmetics (derived from Jawor's patches)
+
+Members: 
+	examples/xvid_encraw.c:1.46.2.2->1.46.2.3 
+
+---------------------
+Date: 2011/01/27 14:18:13
+Author: Isibaar
+Branch: release-1_3-branch
+Tag: (none) 
+Log:
+Increased filter merit
+
+Members: 
+	dshow/src/CXvidDecoder.cpp:1.25.2.1->1.25.2.2 
+
+---------------------
+Date: 2011/01/27 14:13:16
+Author: Isibaar
+Branch: release-1_3-branch
+Tag: (none) 
+Log:
+Ensure that colorspace pass-through is enabled really just for FOURCC_YV12
+
+Members: 
+	vfw/src/codec.c:1.30.2.1->1.30.2.2 
+
+---------------------
+Date: 2011/01/11 12:37:52
+Author: Isibaar
+Branch: release-1_3-branch
+Tag: (none) 
+Log:
+don't hardcode "ar" tool (thanks to Bin Tian)
+
+Members: 
+	build/generic/Makefile:1.18->1.18.2.1 
+	build/generic/configure.in:1.33.2.1->1.33.2.2 
+	build/generic/platform.inc.in:1.8->1.8.2.1 
+
+---------------------
+Date: 2011/01/09 14:20:50
+Author: Isibaar
+Branch: release-1_3-branch
+Tag: (none) 
+Log:
+update for macho64
+
+Members: 
+	src/nasm.inc:1.7->1.7.2.1 
+
+---------------------
+Date: 2011/01/06 15:12:29
+Author: Isibaar
+Branch: release-1_3-branch
+Tag: (none) 
+Log:
+patch for darwin 64-bit target (thanks to Bin Tian)
+
+Members: 
+	build/generic/configure.in:1.33->1.33.2.1 
+
+---------------------
+Date: 2011/01/03 09:31:22
+Author: Isibaar
+Branch: release-1_3-branch
+Tag: (none) 
+Log:
+removed absolute logo path (thanks to Brendan Brewster)
+
+Members: 
+	vfw/src/resource.rc:1.30->1.30.2.1 
+
+---------------------
+Date: 2010/12/31 11:20:22
+Author: Isibaar
+Branch: #CVSPS_NO_BRANCH
+Tag: rc1_1_3_0 
+Log:
+fix some typo
+
+Members: 
+	src/encoder.c:1.135.2.2->1.135.2.3 
+
+---------------------
+Date: 2010/12/30 23:59:31
+Author: Isibaar
+Branch: #CVSPS_NO_BRANCH
+Tag: (none) 
+Log:
+CVS corruption again
+
+Members: 
+	vfw/src/hd1080_40.ico:1.1->1.1.2.1 
+	vfw/src/hd720_40.ico:1.1->1.1.2.1 
+	vfw/src/home_40.ico:1.1->1.1.2.1 
+	vfw/src/mobile_40.ico:1.1->1.1.2.1 
+
+---------------------
+Date: 2010/12/30 23:07:43
+Author: Isibaar
+Branch: #CVSPS_NO_BRANCH
+Tag: (none) 
+Log:
+changed num_slice determination logic
+
+Members: 
+	vfw/src/codec.c:1.30->1.30.2.1 
+	vfw/src/config.c:1.45->1.45.2.1 
+	vfw/src/resource.h:1.15->1.15.2.1 
+
+---------------------
+Date: 2010/12/30 12:46:58
+Author: Isibaar
+Branch: #CVSPS_NO_BRANCH
+Tag: (none) 
+Log:
+more bug squashing
+
+Members: 
+	examples/xvid_encraw.c:1.46.2.1->1.46.2.2 
+	src/image/image.c:1.46->1.46.2.1 
+
+---------------------
+Date: 2010/12/29 23:29:51
+Author: Isibaar
+Branch: release-1_3-branch
+Tag: (none) 
+Log:
+bug fixing...
+
+Members: 
+	src/encoder.c:1.135.2.1->1.135.2.2 
+
+---------------------
+Date: 2010/12/29 23:29:44
+Author: Isibaar
+Branch: #CVSPS_NO_BRANCH
+Tag: (none) 
+Log:
+bug fixing...
+
+Members: 
+	src/motion/estimation_bvop.c:1.28->1.28.2.1 
+	src/motion/estimation_rd_based.c:1.16->1.16.2.1 
+
+---------------------
+Date: 2010/12/28 20:19:57
+Author: Isibaar
+Branch: #CVSPS_NO_BRANCH
+Tag: (none) 
+Log:
+get rid off compiler warnings
+
+Members: 
+	build/win32/libxvidcore.vcproj:1.5->1.5.2.1 
+	build/win32/xvid_decraw.vcproj:1.3->1.3.2.1 
+	build/win32/xvid_encraw.vcproj:1.4->1.4.2.1 
+	dshow/dshow.vcproj:1.3->1.3.2.1 
+	dshow/src/CXvidDecoder.cpp:1.25->1.25.2.1 
+	examples/xvid_decraw.c:1.28->1.28.2.1 
+	src/decoder.c:1.86->1.86.2.1 
+	src/bitstream/bitstream.c:1.60->1.60.2.1 
+	src/bitstream/bitstream.h:1.25->1.25.2.1 
+	src/motion/estimation_pvop.c:1.24->1.24.2.1 
+	src/motion/motion.h:1.27->1.27.2.1 
+	src/motion/motion_comp.c:1.24->1.24.2.1 
+	src/motion/sad.c:1.17->1.17.2.1 
+	src/motion/sad.h:1.25->1.25.2.1 
+	src/plugins/plugin_2pass2.c:1.10->1.10.2.1 
+	src/plugins/plugin_single.c:1.4->1.4.2.1 
+	src/quant/quant_matrix.c:1.16->1.16.4.1 
+	vfw/vfw.vcproj:1.1->1.1.4.1 
+
+---------------------
+Date: 2010/12/28 20:19:57
+Author: Isibaar
+Branch: release-1_3-branch
+Tag: (none) 
+Log:
+get rid off compiler warnings
+
+Members: 
+	examples/xvid_encraw.c:1.46->1.46.2.1 
+	src/encoder.c:1.135->1.135.2.1 
+
+---------------------
+Date: 2010/12/28 17:34:55
+Author: Isibaar
+Branch: #CVSPS_NO_BRANCH
+Tag: (none) 
+Log:
+updated readme and debian files
+
+Members: 
+	debian/changelog:1.3->1.3.2.1 
+	debian/copyright:1.1->1.1.4.1 
+	doc/INSTALL:1.3->1.3.2.1 
+	doc/README:1.5->1.5.2.1 
+	examples/README:1.3->1.3.6.1 
+
+---------------------
+Date: 2010/12/28 17:04:31
+Author: Isibaar
+Branch: #CVSPS_NO_BRANCH
+Tag: (none) 
+Log:
+set version info to xvid-1.3.0-rc1
+
+Members: 
+	src/xvid.c:1.85->1.85.2.1 
+	src/xvid.h:1.74->1.74.2.1 
+
+---------------------
+Date: 2010/12/27 17:39:31
+Author: Isibaar
+Branch: HEAD
+Tag: tag-branching-1_3_0 
+Log:
+updated changelog
+
+Members: 
+	ChangeLog:INITIAL->1.17 
+	TODO:1.8->1.9 
 
 ---------------------
 Date: 2010/12/27 17:11:05

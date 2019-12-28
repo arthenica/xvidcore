@@ -2325,7 +2325,7 @@ FrameCodeB(Encoder * pEnc,
 		image_setedges(f_ref, pEnc->mbParam.edged_width,
 					   pEnc->mbParam.edged_height, pEnc->mbParam.width,
 					   pEnc->mbParam.height, XVID_BS_VERSION);
-		pEnc->reference->is_edged = 1;	
+		pEnc->reference->is_edged = 1;
 	}
 
 	if (pEnc->reference->is_interpolated != 0) {

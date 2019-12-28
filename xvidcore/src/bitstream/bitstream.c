@@ -129,7 +129,7 @@ read_video_packet_header(Bitstream *bs,
 		}
 	}
 
-	mbnum = (mbnum_bits == 0) ? 0 : BitstreamGetBits(bs, mbnum_bits);		/* macroblock_number */
+	mbnum = BitstreamGetBits(bs, mbnum_bits);		/* macroblock_number */
 	DPRINTF(XVID_DEBUG_HEADER, "mbnum %i\n", mbnum);
 
 	if (dec->shape != VIDOBJLAY_SHAPE_BINARY_ONLY)
@@ -862,7 +862,7 @@ BitstreamReadHeaders(Bitstream * bs,
 
 				if (BitstreamGetBit(bs)) {
 					DPRINTF(XVID_DEBUG_ERROR, "RRV not supported (anymore)\n");
-				}
+                                }
 			}
 
 			if (dec->shape != VIDOBJLAY_SHAPE_RECTANGULAR) {
@@ -982,7 +982,7 @@ BitstreamReadHeaders(Bitstream * bs,
 
 		} else if (start_code == USERDATA_START_CODE) {
 			char tmp[256];
-			int i, version = 0, build = 0;
+                        int i, version = 0, build = 0;
 			char packed;
 
 			BitstreamSkip(bs, 32);	/* user_data_start_code */
@@ -1259,7 +1259,7 @@ BitstreamWriteVolHeader(Bitstream * const bs,
 	/* divx5 userdata string */
 #define DIVX5_ID ((char *)"DivX503b1393")
   if ((pParam->global_flags & XVID_GLOBAL_DIVX5_USERDATA)) {
-    BitstreamWriteUserData(bs, DIVX5_ID, (uint32_t)strlen(DIVX5_ID));
+    BitstreamWriteUserData(bs, DIVX5_ID, (uint32_t) strlen(DIVX5_ID));
   	if (pParam->max_bframes > 0 && (pParam->global_flags & XVID_GLOBAL_PACKED))
       BitstreamPutBits(bs, 'p', 8);
 	}
@@ -1272,7 +1272,7 @@ BitstreamWriteVolHeader(Bitstream * const bs,
 				xvid_user_format,
 				XVID_BS_VERSION,
 				(frame->vop_flags & XVID_VOP_CARTOON)?'C':'\0');
-		BitstreamWriteUserData(bs, xvid_user_data, (uint32_t)strlen(xvid_user_data));
+		BitstreamWriteUserData(bs, xvid_user_data, (uint32_t) strlen(xvid_user_data));
 	}
 }
 
